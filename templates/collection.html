@@ -18,12 +18,14 @@
 <header class="mast"><div class="mast-left"><span class="brand"><span class="brandmark"><svg class="ic" aria-hidden="true"><use href="#sign"/></svg></span>上海鹿鸣</span><h1>路名地图</h1></div><button class="about" type="button" id="about"><svg class="ic" aria-hidden="true"><use href="#book"/></svg>收录说明</button></header>
 <main class="workspace">
 <section class="map" id="map" aria-label="上海路名交互地图">
-<div class="surface" id="surface" tabindex="0" aria-label="拖动平移，滚轮或加减键缩放，方向键平移"><canvas id="canvas" aria-hidden="true"></canvas><div class="marks" id="marks"></div></div>
+<div class="surface" id="surface" tabindex="0" aria-label="拖动平移，滚轮或加减键缩放，方向键平移。聚焦收藏点可读路名，按回车读故事。"><canvas id="canvas" aria-hidden="true"></canvas><svg class="road-trace" aria-hidden="true"><path id="hover-path" vector-effect="non-scaling-stroke"/></svg><div class="marks" id="marks"></div><div id="road-tip" class="road-tip" hidden></div></div>
 <div class="mapbar" aria-label="地图范围"><button type="button" id="city" aria-pressed="true">市中心</button><button type="button" id="fit" aria-pressed="false">全部道路</button></div>
 <div class="north" aria-label="上方为北"><span>N</span><svg viewBox="0 0 20 32" aria-hidden="true"><path d="m10 1 7 26-7-5-7 5z" fill="#fffbee" stroke="#486457"/><path d="M10 1v21l-7 5z" fill="#486457"/></svg></div>
 <p class="map-caption" id="map-caption" role="status" hidden></p>
+<button id="retry-map" class="map-retry" type="button" hidden>部分底图未载入 · 重试</button>
 <div class="maptools"><button id="zoom-in" type="button" aria-label="放大地图">+</button><button id="zoom-out" type="button" aria-label="缩小地图">−</button></div>
 <div class="map-hint" id="map-hint" hidden><span class="sample"></span><b id="map-hint-name"></b><span id="map-hint-text"></span></div>
+<div class="explore-key" id="explore-key"><i aria-hidden="true"></i>收藏道路<span class="mouse-hint">悬停看路名</span><span class="touch-hint">轻点看路名</span></div>
 <div class="mapfoot"><div class="scale"><span id="scale-text"></span><i id="scale-bar"></i></div><span class="attribution"><a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OSM</a></span></div>
 </section>
 <aside class="sidebar" aria-label="道路目录和故事"><div class="browse" id="browse"><div class="sidebar-head"><div class="list-title"><h2>路名收藏</h2><span class="count" role="status" id="count"></span></div>
@@ -37,10 +39,10 @@
 <section class="details" id="details" aria-label="所选道路" hidden><button id="back" class="back" type="button">← 返回路名索引</button><div id="story"></div></section>
 <footer class="foot"><span>上海路名收藏册</span><a class="credit" href="https://github.com/28H2O2" target="_blank" rel="noopener noreferrer" lang="en">made by H2O2</a></footer></aside>
 </main>
-<dialog id="rules" aria-labelledby="rules-title"><img class="dialog-pic" src="data:image/jpeg;base64,@@ART@@" alt="创作插画，上海街角的电车"><div class="dialog-content"><div class="dialog-top"><h2 id="rules-title">收录说明</h2><button id="close" aria-label="关闭" type="button">×</button></div>
-<p>地图上的编号和左侧索引一一对应。点选道路查看走向、旧名和出处。同名道路各占一条，按所在区区分。</p>
+<dialog id="rules" aria-labelledby="rules-title"><img class="dialog-pic" data-src="@@ART@@" decoding="async" alt="创作插画，上海街角的电车"><div class="dialog-content"><div class="dialog-top"><h2 id="rules-title">收录说明</h2><button id="close" aria-label="关闭" type="button">×</button></div>
+<p>地图优先标出公园、校园和地标。指向或轻点有名称的街道可以看路名。带圆点的是收藏道路，点开可读故事、旧名和出处。同名道路按所在区区分。</p>
 <p><b>已查证</b>的条目有直接解释命名的资料。<b>传说</b>单独记录流传的讲法。标为<b>待考</b>的路也可以有明确位置，故事栏会等到有出处时再补上。</p>
-<p>底图来自 <a href="https://download.geofabrik.de/asia/china/shanghai.html" target="_blank" rel="noopener noreferrer">Geofabrik 上海摘录</a>，长江口等水面另取自 OpenFreeMap 的 OpenMapTiles 水面图层。地图可离线浏览。道路资料注明坐标依据和定位精度。底图与 OSM 道路几何按 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a> 提供。<button id="download-map" class="reset" type="button">下载本页地理数据</button></p>
+<p>底图来自 <a href="https://download.geofabrik.de/asia/china/shanghai.html" target="_blank" rel="noopener noreferrer">Geofabrik 上海摘录</a>，长江口等水面另取自 OpenFreeMap 的 OpenMapTiles 水面图层。@@OFFLINE_NOTE@@道路资料注明坐标依据和定位精度。底图与 OSM 道路几何按 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a> 提供。<button id="download-map" class="reset" type="button">下载本页地理数据</button></p>
 </div></dialog>
 <script type="application/json" id="dataset">@@ARCHIVE@@</script>
 <script type="application/json" id="basemap">@@BASEMAP@@</script>

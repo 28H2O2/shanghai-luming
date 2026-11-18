@@ -3,6 +3,7 @@ import argparse
 import base64
 import json
 import gzip
+import hashlib
 import math
 import os
 import sys
@@ -16,10 +17,12 @@ DATA = ROOT / "data/roads.yaml"
 TEMPLATE = ROOT / "templates/collection.html"
 ART = ROOT / "assets/shanghai-tram.jpg"
 BASEMAP = ROOT / "assets/shanghai-map.json.gz"
+LANDMARKS = ROOT / "data/landmarks.json"
 SIGNATURE = ROOT / "assets/signature.woff2"
 MAP_STYLE = ROOT / "templates/map.css"
 MAP_SCRIPT = ROOT / "templates/map.js"
 OUTPUT = ROOT / "dist/index.html"
+SITE = ROOT / "out"
 AREAS = "老城厢 原公共租界 原法租界 虹口北外滩 江湾五角场 浦东 徐汇滨江 其他".split()
 TYPES = "租界省市名 河道桥梁遗存 行业作坊 起讫型 谐音讹传 人名 纪念性改名 行政区名 当代新命名 其他".split()
 STATES = ["已查证", "传说", "待考"]
@@ -161,23 +164,82 @@ def read_checked(path):
     return roads
 
 
+def compact(value):
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+
+
+def write_output(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("wb", dir=path.parent, delete=False) as tmp:
+        tmp.write(data)
+    os.replace(tmp.name, path)
+
+
+def site_asset(stem, suffix, data):
+    digest = hashlib.sha256(data).hexdigest()[:16]
+    name = f"assets/{stem}-{digest}.{suffix}"
+    if not (SITE / name).is_file():
+        write_output(SITE / name, data)
+    return name
+
+
+def web_map(geography):
+    overview, local, tiles = [], [], []
+    for index, (kind, name, paths) in enumerate(geography["features"]):
+        xs = [x for line in paths for x in line[::2]]
+        ys = [y for line in paths for y in line[1::2]]
+        box = (min(xs), min(ys), max(xs), max(ys))
+        feature = [index, kind, name, paths]
+        # Wide features cross many views. Keep them and the two central rivers in the first paint.
+        if max(box[2]-box[0], box[3]-box[1]) >= 5500 or (kind == "river" and name in ("黄浦江", "苏州河")):
+            overview.append(feature)
+        else:
+            local.append((box, feature))
+
+    def partition(items):
+        if not items:
+            return
+        box = [min(b[0] for b, _ in items), min(b[1] for b, _ in items),
+               max(b[2] for b, _ in items), max(b[3] for b, _ in items)]
+        if len(items) > 1500:
+            axis = 0 if box[2]-box[0] >= box[3]-box[1] else 1
+            items.sort(key=lambda item: item[0][axis] + item[0][axis+2])
+            middle = len(items) // 2
+            partition(items[:middle])
+            partition(items[middle:])
+            return
+        data = compact([feature for _, feature in items]).encode()
+        tiles.append({"box": box, "url": site_asset("map", "json", data)})
+
+    partition(local)
+    return {**geography, "features": overview, "tiles": tiles}
+
+
 def build(roads):
     template = TEMPLATE.read_text(encoding="utf-8")
-    dataset = dict(roads=roads, areas=AREAS, types=TYPES, states=STATES)
-    payload = json.dumps(dataset, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
-    picture = base64.b64encode(ART.read_bytes()).decode("ascii")
-    signature = base64.b64encode(SIGNATURE.read_bytes()).decode("ascii")
-    style = MAP_STYLE.read_text(encoding="utf-8").replace("@@SIGNATURE@@", signature)
-    basemap = gzip.decompress(BASEMAP.read_bytes()).decode("utf-8").replace("<", "\\u003c")
-    page = (template.replace("@@CSS@@", style)
-            .replace("@@MAPJS@@", MAP_SCRIPT.read_text(encoding="utf-8"))
-            .replace("@@ART@@", picture)
-            .replace("@@BASEMAP@@", basemap)
-            .replace("@@ARCHIVE@@", payload))
-    OUTPUT.parent.mkdir(exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=OUTPUT.parent, delete=False) as tmp:
-        tmp.write(page)
-    os.replace(tmp.name, OUTPUT)
+    style = MAP_STYLE.read_text(encoding="utf-8")
+    script = MAP_SCRIPT.read_text(encoding="utf-8")
+    dataset = compact(dict(roads=roads, areas=AREAS, types=TYPES, states=STATES))
+    geography = json.loads(gzip.decompress(BASEMAP.read_bytes()))
+    geography["landmarks"] = json.loads(LANDMARKS.read_text(encoding="utf-8"))
+    illustration, signature = ART.read_bytes(), SIGNATURE.read_bytes()
+
+    def render(basemap, image_url, font_url, offline_note):
+        return (template.replace("@@CSS@@", style.replace("@@SIGNATURE@@", font_url))
+                .replace("@@MAPJS@@", script).replace("@@ART@@", image_url)
+                .replace("@@OFFLINE_NOTE@@", offline_note)
+                .replace("@@BASEMAP@@", basemap).replace("@@ARCHIVE@@", dataset).encode())
+
+    offline = render(compact(geography),
+                     "data:image/jpeg;base64," + base64.b64encode(illustration).decode(),
+                     "data:font/woff2;base64," + base64.b64encode(signature).decode(), "地图可离线浏览。")
+    hosted_map = web_map(geography)
+    locations = [{k: road[k] for k in ("name", "district", "location")} for road in roads if "location" in road]
+    hosted_map["download"] = site_asset("geography", "json", compact(dict(geography=geography, locations=locations)).encode())
+    online = render(compact(hosted_map), site_asset("tram", "jpg", illustration),
+                    site_asset("signature", "woff2", signature), "在线地图按当前视野载入街道。")
+    write_output(SITE / "index.html", online)
+    write_output(OUTPUT, offline)
 
 
 def check(path, make_page):
@@ -185,7 +247,7 @@ def check(path, make_page):
         roads = read_checked(path)
         if make_page:
             build(roads)
-        print(f"校验通过，共 {len(roads)} 条道路。" + (" 已更新 dist/index.html。" if make_page else ""), flush=True)
+        print(f"校验通过，共 {len(roads)} 条道路。" + (" 已生成离线单页和在线地图。" if make_page else ""), flush=True)
         return True
     except (OSError, ValueError) as error:
         print(f"校验或生成失败（{path}）\n{error}", file=sys.stderr, flush=True)
@@ -215,7 +277,7 @@ def main():
     previous = None
     try:
         while True:
-            current = tuple(file_stamp(p) for p in (DATA, TEMPLATE, MAP_STYLE, MAP_SCRIPT, ART, SIGNATURE, BASEMAP))
+            current = tuple(file_stamp(p) for p in (DATA, LANDMARKS, TEMPLATE, MAP_STYLE, MAP_SCRIPT, ART, SIGNATURE, BASEMAP))
             if current != previous:
                 previous = current
                 check(DATA, True)

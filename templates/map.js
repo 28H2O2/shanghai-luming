@@ -44,6 +44,7 @@ function limitView() {
   for (let i=0;i<2;i++) view.center[i]=Math.min(mapBounds[1][i],Math.max(mapBounds[0][i],view.center[i]));
 }
 function camera(center,scale,mode) {
+  clearRoadTip();
   view.center=center; view.scale=scale; view.mode=mode;
   limitView(); queueDraw();
 }
@@ -77,15 +78,26 @@ function zoomAt(factor,x=view.width/2,y=view.height/2) {
   camera([before[0]-(x-view.width/2)/scale,before[1]-(y-view.height/2)/scale],scale,'free');
 }
 // Geographic elements share one WGS84 local projection. Both positions and road vertices use this transform.
-const features = geography.features.map(([kind,name,parts])=>{
-  const path=new Path2D(), box=[Infinity,Infinity,-Infinity,-Infinity];
-  let anchor=null, length=0;
+function indexFeature(index,kind,name,parts) {
+  const box=[Infinity,Infinity,-Infinity,-Infinity];
+  for(const flat of parts) for(let i=0;i<flat.length;i+=2){
+    const x=flat[i], y=-flat[i+1]*latitudeFactor;
+    box[0]=Math.min(box[0],x);box[1]=Math.min(box[1],y);
+    box[2]=Math.max(box[2],x);box[3]=Math.max(box[3],y);
+  }
+  const feature={index,kind,name,box,parts,path:null,anchor:null,length:0};
+  if(!grouped.has(kind)) grouped.set(kind,[]);
+  grouped.get(kind).push(feature);
+}
+function preparePath(feature) {
+  if(feature.path) return;
+  const path=new Path2D();
+  let anchor=null,length=0;
+  const parts=feature.parts;
   for (const flat of parts) {
     for(let i=0;i<flat.length;i+=2){
       const [x,y]=pointFromPair(flat[i],flat[i+1]);
       if(i===0) path.moveTo(x,y);else path.lineTo(x,y);
-      box[0]=Math.min(box[0],x);box[1]=Math.min(box[1],y);
-      box[2]=Math.max(box[2],x);box[3]=Math.max(box[3],y);
       if(i>=2) length+=Math.hypot(x-flat[i-2],y+flat[i-1]*latitudeFactor);
     }
     if(!anchor && flat.length>=4) {
@@ -93,14 +105,57 @@ const features = geography.features.map(([kind,name,parts])=>{
       anchor=pointFromPair((flat[mid]+flat[mid+2])/2,(flat[mid+1]+flat[mid+3])/2);
     }
   }
-  return {kind,name,path,box,anchor,length};
-});
-const grouped = new Map();
-for (const feature of features) {
-  if(!grouped.has(feature.kind)) grouped.set(feature.kind,[]);
-  grouped.get(feature.kind).push(feature);
+  Object.assign(feature,{path,anchor,length});
 }
+const grouped = new Map();
+const tiles=(geography.tiles || []).map(tile=>{
+  const [west,south,east,north]=tile.box;
+  return {url:tile.url,box:[west,-north*latitudeFactor,east,-south*latitudeFactor],state:'idle'};
+});
+if(geography.tiles) {
+  for(const row of geography.features) indexFeature(...row);
+} else {
+  geography.features.forEach((row,index)=>indexFeature(index,...row));
+}
+const dirtyLayers=new Set();
+let loadingTiles=0;
+async function loadTile(tile) {
+  tile.state='loading';
+  loadingTiles++;
+  try {
+    const response=await fetch(tile.url);
+    if(!response.ok) throw new Error(String(response.status));
+    const rows=await response.json();
+    for(const row of rows) {
+      indexFeature(...row);
+      dirtyLayers.add(row[1]);
+    }
+    tile.state='loaded';
+  } catch {
+    tile.state='failed';
+  } finally {
+    loadingTiles--;
+    queueDraw();
+  }
+}
+function updateTiles(window) {
+  const needed=tiles.filter(tile=>inWindow(tile.box,window));
+  byId('retry-map').hidden=!needed.some(tile=>tile.state==='failed');
+  for(const tile of needed){
+    if(loadingTiles>=4) break;
+    if(tile.state==='idle') loadTile(tile);
+  }
+  // Preserve the source's drawing and label priority regardless of network completion order.
+  for(const kind of dirtyLayers) grouped.get(kind).sort((a,b)=>a.index-b.index);
+  dirtyLayers.clear();
+}
+byId('retry-map').addEventListener('click',()=>{
+  for(const tile of tiles) if(tile.state==='failed') tile.state='idle';
+  queueDraw();
+});
+const localLandmarks=geography.landmarks.points.map(p=>({name:p.name,kind:p.kind,point:project(p.point)}));
 const placeLabels=geography.places.map(([name,kind,x,y])=>({name,kind,point:pointFromPair(x,y)}));
+const landmarks=[...localLandmarks,...placeLabels.filter(p=>p.kind==='landmark')];
 const mapPalette = {
   field:'#e4e8d1',block:'#e6e1d3',green:'#d0dfba',building:'#d8d0bf',water:'#a9cfcd',
   river:'#9bc4c2',canal:'#b0cfcc',rail:'#b7b2a9',lane:'#fffdf5',street:'#fffdf5',
@@ -110,14 +165,15 @@ const polygonLayers=['field','block','green','building','water'];
 const roadLayers=['lane','street','secondary','main','highway'];
 const cutoffs={field:0,block:.041,green:0,building:.28,water:0,river:0,canal:.052,rail:.03,lane:.067,street:.046,secondary:.019,main:0,highway:0};
 const widths={river:1.7,canal:1,rail:1.1,lane:1.5,street:2.2,secondary:2.9,main:3.8,highway:3.6};
-const labelRoads=['river','green','main','secondary','street','lane','highway'];
 const lineOrder=['river','canal','rail',...roadLayers];
+let visibleStreets=[];
 function inWindow(box,window) {return box[0]<=window[2] && box[2]>=window[0] && box[1]<=window[3] && box[3]>=window[1];}
 function draw() {
   frame=0;
   const {width,height,scale}=view,dpr=canvas.width/Math.max(1,width);
   const [left,top]=world([0,0]), [right,bottom]=world([width,height]);
   const window=[left,top,right,bottom];
+  if(tiles.length) updateTiles(window);
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#eeecdf';ctx.fillRect(0,0,width,height);
   ctx.setTransform(dpr*scale,0,0,dpr*scale,-left*scale*dpr,-top*scale*dpr);
@@ -126,7 +182,9 @@ function draw() {
   for(const kind of [...polygonLayers,...lineOrder]){
     const layer=scale>=cutoffs[kind]?(grouped.get(kind)||[]):[];
     shown[kind]=layer.filter(f=>inWindow(f.box,window));
+    for(const feature of shown[kind]) preparePath(feature);
   }
+  visibleStreets=roadLayers.flatMap(kind=>shown[kind]).filter(f=>f.name);
   for(const kind of polygonLayers) {
     ctx.fillStyle=mapPalette[kind];
     for(const f of shown[kind]) ctx.fill(f.path,'evenodd');
@@ -169,19 +227,39 @@ function draw() {
     ctx.fillStyle=color;ctx.fillText(name,x,y);return true;
   }
   const used=new Set();
-  for(const p of placeLabels){
-    if(!p.name || used.has(p.name))continue;
-    const isDistrict=p.kind==='city'||p.name.endsWith('区')&&p.kind==='suburb';
-    if(isDistrict && scale>.22 || p.kind==='landmark' && scale<.04 || !isDistrict && p.kind!=='landmark' && scale<(p.kind==='town'?.017:.095))continue;
-    if(textLabel(p.name,p.point,isDistrict?16:p.kind==='landmark'?13:12,isDistrict?'#657568':'#68766a',isDistrict)) used.add(p.name);
-  }
-  for(const kind of labelRoads){
-    if(!['river','green'].includes(kind) && scale<(kind==='main'?.057:kind==='secondary'?.09:.17))continue;
-    for(const f of shown[kind]){
-      if(!f.name||used.has(f.name)||!f.anchor||f.name.length>13 || kind!=='green'&&f.length*scale<65)continue;
-      if(textLabel(f.name,f.anchor,kind==='river'?14:12,kind==='river'?'#497d7b':kind==='green'?'#647b54':'#77776b',kind==='river'))used.add(f.name);
+  function landmarkLabel(name,point,kind){
+    if(used.has(name))return;
+    const [x,y]=screen(point),size=13;
+    if(x<8||x>width-8||y<12||y>height-12)return;
+    const color=kind==='park'?'#426444':kind==='campus'?'#465b70':'#705338';
+    ctx.font='600 '+size+'px "PingFang SC","Microsoft YaHei",sans-serif';
+    const tw=ctx.measureText(name).width;
+    for(const [dx,dy] of [[8,0],[-8-tw,0],[-tw/2,-16],[-tw/2,16],[8,-14],[-8-tw,14]]){
+      const tx=x+dx,ty=y+dy;
+      const box=[tx-3,ty-9,tx+tw+3,ty+9];
+      if(box[0]<2||box[2]>width-2||box[1]<2||box[3]>height-2||collisions.some(b=>inWindow(b,box)))continue;
+      collisions.push(box,[x-4,y-4,x+4,y+4]);used.add(name);
+      ctx.fillStyle=color;ctx.strokeStyle='#fffdf0';ctx.lineWidth=2;
+      ctx.beginPath();
+      if(kind==='park'){ctx.arc(x,y,3.8,0,2*Math.PI);}
+      else if(kind==='campus'){ctx.rect(x-3.4,y-3.4,6.8,6.8);}
+      else {ctx.moveTo(x,y-5);ctx.lineTo(x+4,y);ctx.lineTo(x,y+5);ctx.lineTo(x-4,y);ctx.closePath();}
+      ctx.stroke();ctx.fill();ctx.lineWidth=3.3;ctx.textAlign='left';ctx.textBaseline='middle';
+      ctx.strokeText(name,tx,ty);ctx.fillText(name,tx,ty);return;
     }
   }
+  if(scale>=.02)for(const p of landmarks)landmarkLabel(p.name,p.point,p.kind);
+  if(scale>=.12)for(const f of shown.green){
+    if(f.name && f.anchor && !used.has(f.name))landmarkLabel(f.name,f.anchor,'park');
+  }
+  for(const p of placeLabels){
+    if(!p.name || used.has(p.name) || p.kind==='landmark')continue;
+    const isDistrict=p.kind==='city'||p.name.endsWith('区')&&p.kind==='suburb';
+    if(isDistrict ? scale>.17 : scale<(p.kind==='town'?.03:.16))continue;
+    if(textLabel(p.name,p.point,isDistrict?15:12,'#697767',isDistrict)) used.add(p.name);
+  }
+  for(const f of shown.river)if(f.name&&!used.has(f.name)&&f.anchor&&f.length*scale>=65 &&
+    textLabel(f.name,f.anchor,14,'#497d7b',true))used.add(f.name);
   const distances=[10,20,50,100,200,500,1000,2000,5000,10000,20000];
   const target=82*metresPerUnit/scale;
   const distance=distances.filter(d=>d<=target).pop()||10;
@@ -194,27 +272,30 @@ function draw() {
 const statusClass={'已查证':'','待考':' pending','传说':' legend'};
 const markerNodes=roads.map((r,i)=>{
   if(!position[i])return null;
-  const button=el('button','mark'+statusClass[r.credibility],String(i+1));
+  const button=el('button','mark'+statusClass[r.credibility]);
   button.setAttribute('aria-label','定位'+r.name+'（'+r.district+'）');button.type='button';
   const kind=r.location.kind;button.classList.add(kind);
-  const label=el('span','mapname',r.name+(kind==='area'?' · 片区':kind==='point'?' · 路口':''));
-  button.append(label);byId('marks').append(button);
+  byId('marks').append(button);
+  const preview=()=>showRoadTip({index:i},[parseFloat(button.style.left),parseFloat(button.style.top)]);
+  button.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')preview();});
+  button.addEventListener('focus',preview);
+  button.addEventListener('blur',clearRoadTip);
   button.addEventListener('click',()=>selectRoad(i,'marker'));
-  return {button,label};
+  return {button};
 });
 function positionMarkers() {
-  const taken=[], occupied=[];
+  const occupied=[];
   const priority=visible.filter(i=>i!==selected);
   if(selected!==null)priority.unshift(selected);
-  for(let i=0;i<markerNodes.length;i++) if(markerNodes[i])markerNodes[i].button.hidden=true;
+  for(let i=0;i<markerNodes.length;i++) if(markerNodes[i]&&!priority.includes(i))markerNodes[i].button.hidden=true;
   const {width,height}=view;
-  const blocked=[[4,3,156,51],[width-43,4,width-5,65],[width-61,height-147,width-3,height-28],[0,height-28,width,height]];
+  const blocked=[[4,3,156,51],[width-43,4,width-5,65],[width-61,height-147,width-3,height-28],[0,height-28,width,height],[0,height-62,182,height-25]];
   for(const i of priority){
     const m=markerNodes[i];if(!m)continue;
     const [x,y]=screen(position[i].point);
-    if(x<-10||x>width+10||y<-10||y>height+10)continue;
+    if(x<-10||x>width+10||y<-10||y>height+10){m.button.hidden=true;continue;}
     let mx=x,my=y;
-    const overlaps=(a,b)=>occupied.some(box=>inWindow(box,[a-13,b-13,a+13,b+13]));
+    const overlaps=(a,b)=>occupied.some(box=>inWindow(box,[a-8,b-8,a+8,b+8]));
     if(overlaps(mx,my)){
       search: for(const radius of [25,39,55,72]){
         for(const [dx,dy] of [[1,0],[-1,0],[0,-1],[0,1],[.72,-.72],[-.72,.72],[.72,.72],[-.72,-.72]]){
@@ -230,22 +311,9 @@ function positionMarkers() {
     }
     m.button.hidden=false;m.button.style.left=mx+'px';m.button.style.top=my+'px';
     m.button.classList.toggle('chosen',i===selected);m.button.setAttribute('aria-pressed',i===selected);
-    occupied.push([mx-12,my-12,mx+12,my+12]);
+    occupied.push([mx-7,my-7,mx+7,my+7]);
   }
-  for(const i of priority){
-    const m=markerNodes[i];if(!m||m.button.hidden)continue;
-    const x=parseFloat(m.button.style.left),y=parseFloat(m.button.style.top);
-    const w=m.label.textContent.length*(width<550?13:14)+14;
-    const choices=[[15,-13],[-w-15,-13],[-w/2,-39],[-w/2,16]];
-    m.label.hidden=true;
-    for(const [dx,dy] of choices){
-      const box=[x+dx-1,y+dy-1,x+dx+w+1,y+dy+24];
-      if(box[0]<0||box[2]>width||box[1]<0||box[3]>height||[...blocked,...taken,...occupied].some(b=>inWindow(b,box)))continue;
-      m.label.style.left=(dx+10)+'px';m.label.style.top=(dy+10)+'px';m.label.hidden=false;
-      taken.push(box);break;
-    }
-  }
-  return [...blocked,...taken,...occupied];
+  return [...blocked,...occupied];
 }
 function externalLink(title,url) {
   const link=el('a','',title);link.href=url;link.target='_blank';link.rel='noopener noreferrer';return link;
@@ -286,6 +354,7 @@ function selectRoad(i,source) {
   if(!visible.includes(i))return;
   if(selected===null) priorView={center:view.center.slice(),scale:view.scale,mode:view.mode};
   selected=i;lastSelected=i;returnSource=source;
+  clearRoadTip();byId('explore-key').hidden=true;
   byId('browse').hidden=true;byId('details').hidden=false;renderStory(i);byId('details').scrollTop=0;
   const loc=roads[i].location;
   byId('map-hint').hidden=!loc;
@@ -298,6 +367,7 @@ function selectRoad(i,source) {
   if(matchMedia('(max-width:720px)').matches && source==='row') byId('map').scrollIntoView({block:'start'});
 }
 function returnToList(restore=true) {
+  clearRoadTip();byId('explore-key').hidden=false;
   selected=null;byId('details').hidden=true;byId('browse').hidden=false;
   byId('map-hint').hidden=true;byId('map-caption').hidden=true;
   if(restore && priorView) camera(priorView.center.slice(),priorView.scale,priorView.mode);
@@ -348,15 +418,23 @@ byId('reset').addEventListener('click',clearAll);byId('showall').addEventListene
 byId('city').addEventListener('click',()=>{if(selected!==null)returnToList(false);cityView();});
 byId('fit').addEventListener('click',()=>{if(selected!==null)returnToList(false);fitRoads();});
 byId('zoom-in').addEventListener('click',()=>zoomAt(1.55));byId('zoom-out').addEventListener('click',()=>zoomAt(1/1.55));
-byId('about').addEventListener('click',()=>byId('rules').showModal());
+byId('about').addEventListener('click',()=>{
+  const picture=byId('rules').querySelector('img');
+  if(!picture.hasAttribute('src')) picture.src=picture.dataset.src;
+  byId('rules').showModal();
+});
 byId('close').addEventListener('click',()=>byId('rules').close());
 byId('rules').addEventListener('click',e=>{
   const b=e.currentTarget.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)e.currentTarget.close();
 });
 byId('download-map').addEventListener('click',()=>{
+  const link=el('a');link.download='上海鹿鸣-地理数据.json';
+  if(geography.download){
+    link.href=geography.download;link.click();return;
+  }
   const locations=roads.filter(r=>r.location).map(r=>({name:r.name,district:r.district,location:r.location}));
   const url=URL.createObjectURL(new Blob([JSON.stringify({geography,locations})],{type:'application/json'}));
-  const link=el('a');link.href=url;link.download='上海鹿鸣-地理数据.json';link.click();
+  link.href=url;link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1500);
 });
 function pointerAt(e){const b=surface.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top];}
@@ -368,12 +446,16 @@ function gesture(){
 }
 surface.addEventListener('pointerdown',e=>{
   if(e.target.closest('button')||e.button!==0)return;
+  clearRoadTip();
   const p=pointerAt(e);if(!pointers.size){start=p;moved=false;}
   pointers.set(e.pointerId,p);if(pointers.size>1)moved=true;
   surface.setPointerCapture(e.pointerId);surface.classList.add('dragging');
 });
 surface.addEventListener('pointermove',e=>{
-  if(!pointers.has(e.pointerId))return;
+  if(!pointers.has(e.pointerId)){
+    if(e.pointerType!=='touch' && !e.target.closest('button')) scheduleHover(pointerAt(e));
+    return;
+  }
   const prev=gesture(),p=pointerAt(e);pointers.set(e.pointerId,p);
   const next=gesture();
   if(!moved&&start&&Math.hypot(p[0]-start[0],p[1]-start[1])<3)return;
@@ -381,21 +463,69 @@ surface.addEventListener('pointermove',e=>{
   if(prev.span>2 && next.span>2)zoomAt(next.span/prev.span,prev.x,prev.y);
   camera([view.center[0]-(next.x-prev.x)/view.scale,view.center[1]-(next.y-prev.y)/view.scale],view.scale,'free');
 });
-function nearestRoad(p){
-  let best=10,found=null;
-  for(const i of visible)for(const line of position[i]?.paths||[]){
+function segmentDistance2(x,y,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay;
+  const t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy||1)));
+  return (x-ax-t*dx)**2+(y-ay-t*dy)**2;
+}
+function roadAt(p,tolerance=6){
+  const [x,y]=world(p), radius=tolerance/view.scale;
+  const box=[x-radius,y-radius,x+radius,y+radius];
+  let best=radius**2, hit=null;
+  for(const index of visible)for(const line of position[index]?.paths||[]){
     for(let j=1;j<line.length;j++){
-      const a=screen(line[j-1]),b=screen(line[j]),dx=b[0]-a[0],dy=b[1]-a[1];
-      const t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1)));
-      const dist=Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
-      if(dist<best){best=dist;found=i;}
+      const a=line[j-1],b=line[j],d=segmentDistance2(x,y,a[0],a[1],b[0],b[1]);
+      if(d<best){best=d;hit={index};}
     }
   }
-  return found;
+  if(hit)return hit;
+  for(const feature of visibleStreets){
+    if(!inWindow(feature.box,box))continue;
+    for(const flat of feature.parts)for(let j=2;j<flat.length;j+=2){
+      const d=segmentDistance2(x,y,flat[j-2],-flat[j-1]*latitudeFactor,flat[j],-flat[j+1]*latitudeFactor);
+      if(d<best){best=d;hit={feature};}
+    }
+  }
+  return hit;
 }
+const roadTip=byId('road-tip'), trace=byId('hover-path');
+let hoverKey=null, hoverFrame=0, hoverPoint=null;
+function clearRoadTip(){
+  cancelAnimationFrame(hoverFrame);hoverFrame=0;hoverKey=null;
+  roadTip.hidden=true;trace.removeAttribute('d');surface.classList.remove('has-road');
+}
+function showRoadTip(hit,p){
+  if(!hit){clearRoadTip();return;}
+  cancelAnimationFrame(hoverFrame);hoverFrame=0;
+  const key=hit.feature??hit.index;
+  if(key!==hoverKey){
+    const paths=hit.feature?hit.feature.parts.map(flat=>{
+      const line=[];
+      for(let i=0;i<flat.length;i+=2)line.push(pointFromPair(flat[i],flat[i+1]));
+      return line;
+    }):position[hit.index].paths;
+    trace.setAttribute('d',paths.map(line=>line.map((point,i)=>(i?'L':'M')+screen(point).join(',')).join(' ')).join(' '));
+    roadTip.textContent=hit.feature?hit.feature.name:roads[hit.index].name;
+    hoverKey=key;
+  }
+  roadTip.hidden=false;surface.classList.add('has-road');
+  roadTip.style.left=Math.max(4,Math.min(p[0]+10,view.width-roadTip.offsetWidth-4))+'px';
+  roadTip.style.top=(p[1]<40?p[1]+15:p[1]-roadTip.offsetHeight-10)+'px';
+}
+function scheduleHover(p){
+  hoverPoint=p;
+  if(!hoverFrame)hoverFrame=requestAnimationFrame(()=>{
+    hoverFrame=0;showRoadTip(roadAt(hoverPoint),hoverPoint);
+  });
+}
+surface.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')clearRoadTip();});
+surface.addEventListener('keydown',e=>{if(e.key==='Escape')clearRoadTip();});
 function endPointer(e){
   if(!pointers.has(e.pointerId))return;
-  if(e.type==='pointerup'&&!moved&&pointers.size===1){const i=nearestRoad(pointerAt(e));if(i!==null)selectRoad(i,'marker');}
+  if(e.type==='pointerup'&&!moved&&pointers.size===1){
+    const p=pointerAt(e),hit=roadAt(p,e.pointerType==='touch'?10:6);
+    if(hit?.index!==undefined)selectRoad(hit.index,'marker');else showRoadTip(hit,p);
+  }
   pointers.delete(e.pointerId);
   if(!pointers.size){surface.classList.remove('dragging');start=null;}
 }
@@ -409,8 +539,10 @@ surface.addEventListener('keydown',e=>{
   else if(['+','=','-','0'].includes(e.key)){e.preventDefault();if(e.key==='0') fitRoads();else zoomAt(e.key==='-'?1/1.55:1.55);}
 });
 function resize(){
-  view.width=surface.clientWidth;view.height=surface.clientHeight;
-  const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(view.width*dpr);canvas.height=Math.round(view.height*dpr);
+  const width=surface.clientWidth,height=surface.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
+  const pixelsX=Math.round(width*dpr),pixelsY=Math.round(height*dpr);
+  if(view.width===width && view.height===height && canvas.width===pixelsX && canvas.height===pixelsY) return;
+  view.width=width;view.height=height;canvas.width=pixelsX;canvas.height=pixelsY;
   if(view.mode==='city')cityView();else if(view.mode==='all')fitRoads();else if(view.mode==='selected'&&selected!==null)frameSelection(selected);else queueDraw();
 }
 // A shared area link opens with the same bounds as a manual filter selection.

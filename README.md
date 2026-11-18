@@ -2,9 +2,9 @@
 
 双击 `dist/index.html` 即可打开路名地图。地图、搜索、筛选和故事都能离线使用。在线访问 [上海鹿鸣](https://shanghai-luming-road-archive.h2o228314.chatgpt.site)。
 
-默认显示市中心。点地图编号、彩色道路或目录里的路名，会定位并打开故事。“全部道路”把宝山和浦东大团也放进视野。筛选后的同一按钮显示“筛选结果”。支持拖动、滚轮、双指缩放及键盘方向键、加减键。手机上地图在上，故事在下。
+默认显示市中心。地图优先标出公园、校园和地标。指向或轻点有名的街道会显示路名，点击收藏圆点、彩色道路或目录里的路名可打开故事。用 Tab 聚焦圆点可读路名，按回车打开。“全部道路”把宝山和浦东大团也放进视野。筛选后的同一按钮显示“筛选结果”。支持拖动、滚轮、双指缩放及键盘方向键、加减键。手机上地图在上，故事在下。
 
-地图现收录 25 条道路。打开[江湾五角场地图](https://shanghai-luming-road-archive.h2o228314.chatgpt.site/?area=江湾五角场)，可以一起看环岛的五条马路、复旦附近的大学路和国福路，以及此前收录的世界路。全图有 23 条道路画出了具名路段，零点大道标到宝杨路口，大团镇海潮路标到川南奉公路交叉口。定位精度与路名由来的可信度分别记录。
+地图现收录 45 条道路。打开[江湾五角场地图](https://shanghai-luming-road-archive.h2o228314.chatgpt.site/?area=江湾五角场)，可以一起看环岛的五条马路、复旦附近的大学路和国福路、新江湾城的恒耀路，以及此前收录的世界路。全图有 43 条道路画出了具名路段，零点大道标到宝杨路口，大团镇海潮路标到川南奉公路交叉口。定位精度与路名由来的可信度分别记录。
 
 ## 增补一条路
 
@@ -69,9 +69,9 @@ python3 scripts/validate.py --watch
 
 ## 底图与署名
 
-`assets/shanghai-map.json.gz` 包含裁切、简化的路网、水系、地名和绿地，数据来自 [Geofabrik 上海 OSM 摘录（2026-11-16）](https://download.geofabrik.de/asia/china/shanghai.html)。长江口等水面以 [OpenFreeMap](https://openfreemap.org/) 的 [OpenMapTiles](https://openmaptiles.org/) 2026-11-15 图层补齐。显示时采用上海附近的等距圆柱投影，北向上。底图取经度 120.96°～121.97°、纬度 30.77°～31.59°，收藏道路周边保留更多支路。大比例尺下可以看走向，不能用于测量道路红线。
+`assets/shanghai-map.json.gz` 包含裁切、简化的路网、水系、地名和绿地，数据来自 [Geofabrik 上海 OSM 摘录（2026-11-16）](https://download.geofabrik.de/asia/china/shanghai.html)。长江口等水面以 [OpenFreeMap](https://openfreemap.org/) 的 [OpenMapTiles](https://openmaptiles.org/) 2026-11-15 图层补齐。公园、校园和场馆的重点标注见 `data/landmarks.json`，坐标取自同一摘录的对应地物面内，并保留 OSM 对象编号。显示时采用上海附近的等距圆柱投影，北向上。底图取经度 120.96°～121.97°、纬度 30.77°～31.59°，收藏道路周边保留更多支路。大比例尺下可以看走向，不能用于测量道路红线。
 
-地理数据按 [Open Database License 1.0](https://www.openstreetmap.org/copyright) 提供，© OpenStreetMap 贡献者。可在页面“收录说明”中下载内嵌底图与道路定位数据。底图的压缩整数格式、原点和换算公式在下载文件的 `encoding` 字段中。署名使用从 Macintosh Skeletal Filled 提取的 “made by H2O2” 字形，随页面内嵌。
+地理数据按 [Open Database License 1.0](https://www.openstreetmap.org/copyright) 提供，© OpenStreetMap 贡献者。可在页面“收录说明”中下载完整底图与道路定位数据。底图的压缩整数格式、原点和换算公式在下载文件的 `encoding` 字段中。署名使用从 Macintosh Skeletal Filled 提取的 “made by H2O2” 字形。在线版单独缓存字体，离线版把字体嵌在页面里。
 
 ## 单独校验与生成
 
@@ -80,6 +80,6 @@ python3 scripts/validate.py
 python3 scripts/validate.py --build
 ```
 
-第一条命令只校验。第二条通过校验后，用 `templates/` 中的页面、样式、地图交互脚本和 `assets/` 中的底图、插画与字体 生成完整的 `dist/index.html`。也可把另一份数据文件的路径作为校验脚本的位置参数，单独检查。结构检查覆盖字段、枚举、字数、链接格式和传说出处，资料能否证明某个命名说法仍需阅读原文判定。
+第一条命令只校验。第二条通过校验后，用 `templates/` 中的页面、样式、地图交互脚本和 `assets/` 中的素材生成两个入口。双击 `dist/index.html` 可离线使用全部功能，也可以单独分享这个文件。在线版生成在 `out/`，首页包含路名故事、道路定位和主要水系，详细底图随平移或缩放按视野加载；插画在打开收录说明时加载。也可把另一份数据文件的路径作为校验脚本的位置参数，单独检查。结构检查覆盖字段、枚举、字数、链接格式和传说出处，资料能否证明某个命名说法仍需阅读原文判定。
 
-本地更新后，将新版本发布至同一 Sites 项目，在线页才会随之更新。站点入口为 `dist/index.html`，Sites 配置见 `.openai/hosting.json`。收录说明中的电车街景为创作插画。
+本地更新后，将新版本发布至同一 Sites 项目，在线页才会随之更新。发布前运行 `--build`，站点入口为 `out/index.html`。Sites 配置见 `.openai/hosting.json`。收录说明中的电车街景为创作插画。
