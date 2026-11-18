@@ -15,7 +15,8 @@ const bounds = geography.bounds;
 const mapBounds = [project([bounds[0],bounds[3]]), project([bounds[2],bounds[1]])];
 const view = {center:cityCenter.slice(),scale:0.08,width:1,height:1,mode:'city'};
 let visible = roads.map((_,index)=>index), selected = null, frame = 0, priorView = null;
-const minimumScale = 0.006, maximumScale = 1.55;
+const maximumScale = 1.55;
+let minimumScale = 0;
 function el(tag, cls, text) {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
@@ -48,12 +49,15 @@ function camera(center,scale,mode) {
   view.center=center; view.scale=scale; view.mode=mode;
   limitView(); queueDraw();
 }
+function scaleForBounds([x0,y0,x1,y1],overview=false) {
+  const padX=overview?Math.min(48,view.width*.12):Math.min(110,view.width*.19);
+  const padY=overview?Math.min(48,view.height*.12):Math.min(96,view.height*.23);
+  return Math.min((view.width-2*padX)/Math.max(x1-x0,1),(view.height-2*padY)/Math.max(y1-y0,1));
+}
 function fitPoints(points,mode,cap=.72) {
   if (!points.length) {camera(cityCenter.slice(),cityScale(),mode); return;}
-  const [x0,y0,x1,y1]=boundsOf(points);
-  const padX=Math.min(110,view.width*.19), padY=Math.min(96,view.height*.23);
-  const scale=Math.min((view.width-2*padX)/Math.max(x1-x0,1),(view.height-2*padY)/Math.max(y1-y0,1),cap);
-  camera([(x0+x1)/2,(y0+y1)/2],scale,mode);
+  const box=boundsOf(points);
+  camera([(box[0]+box[2])/2,(box[1]+box[3])/2],Math.min(scaleForBounds(box),cap),mode);
 }
 function cityScale() {return Math.min(view.width/11350,view.height/5100);}
 function cityView(){camera(cityCenter.slice(),cityScale(),'city');}
@@ -62,7 +66,14 @@ const position = roads.map(road => {
   if (!loc || !loc.point) return null;
   return {point:project(loc.point), paths:(loc.paths||[]).map(line=>line.map(project))};
 });
+const mappedPoints=position.flatMap(pos=>pos?[pos.point,...pos.paths.flat()]:[]);
+const overviewBounds=mappedPoints.length?boundsOf(mappedPoints):mapBounds.flat();
 function fitRoads() {
+  if(visible.length===roads.length){
+    const [x0,y0,x1,y1]=overviewBounds;
+    camera([(x0+x1)/2,(y0+y1)/2],minimumScale,'all');
+    return;
+  }
   const points=visible.flatMap(i=>position[i]?[position[i].point,...position[i].paths.flat()]:[]);
   fitPoints(points,'all',visible.length===1?.42:.22);
 }
@@ -75,6 +86,7 @@ function frameSelection(i) {
 function zoomAt(factor,x=view.width/2,y=view.height/2) {
   const before=world([x,y]);
   const scale=Math.min(maximumScale,Math.max(minimumScale,view.scale*factor));
+  if(scale===view.scale) return;
   camera([before[0]-(x-view.width/2)/scale,before[1]-(y-view.height/2)/scale],scale,'free');
 }
 // Geographic elements share one WGS84 local projection. Both positions and road vertices use this transform.
@@ -548,7 +560,8 @@ function resize(){
   const pixelsX=Math.round(width*dpr),pixelsY=Math.round(height*dpr);
   if(view.width===width && view.height===height && canvas.width===pixelsX && canvas.height===pixelsY) return;
   view.width=width;view.height=height;canvas.width=pixelsX;canvas.height=pixelsY;
-  if(view.mode==='city')cityView();else if(view.mode==='all')fitRoads();else if(view.mode==='selected'&&selected!==null)frameSelection(selected);else queueDraw();
+  minimumScale=Math.min(scaleForBounds(overviewBounds,true),cityScale(),maximumScale);
+  if(view.mode==='city')cityView();else if(view.mode==='all')fitRoads();else if(view.mode==='selected'&&selected!==null)frameSelection(selected);else {limitView();queueDraw();}
 }
 // A shared area link opens with the same bounds as a manual filter selection.
 const initialArea = new URLSearchParams(window.location.search).get('area');

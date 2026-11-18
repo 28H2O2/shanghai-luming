@@ -3100,11 +3100,23 @@
     "old_names": [],
     "district": "黄浦区",
     "area_group": "其他",
-    "naming_type": [],
-    "story": "",
+    "naming_type": [
+      "河道桥梁遗存"
+    ],
+    "story": "从董家渡的陆家浜路轮渡站走向中山南路，油车码头街一路弯过去，在另一头接上薛家浜路。辛亥革命后，已经淤塞的薛家浜被填平，人们顺着旧河道筑起这两条路，河浜的弯也留在了街上。靠江的这一段原先通到油车码头，街名便沿用了码头的名字。",
     "fun_fact": "在董家渡一带，油车码头街 43 号曾是沪南慈善会的地址。",
-    "credibility": "待考",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "陈寒松《行走沪上｜消失的董家渡》· 澎湃新闻",
+        "url": "https://www.thepaper.cn/newsDetail_forward_6964440",
+        "scope": "陆家浜路轮渡站一节，说明街因通往油车码头得名，以及填浜筑路留下的弯道。"
+      },
+      {
+        "title": "王先铸《老南市地区道路地名浅释》· 上海市测绘院",
+        "url": "https://m.thepaper.cn/newsDetail_forward_15789543",
+        "scope": "摘自《南市区地名志》，“以码头渡口命名”一节列有油车码头街。"
+      },
       {
         "title": "黄浦区《第二批文物保护点名单》",
         "url": "https://www.shhuangpu.gov.cn/uploadfile/6051185f-9fc3-44b3-93e3-e4aa4c122c1a/%E9%BB%84%E6%B5%A6%E5%8C%BA%E7%AC%AC%E4%BA%8C%E6%89%B9%E6%96%87%E7%89%A9%E4%BF%9D%E6%8A%A4%E7%82%B9%E5%85%AC%E5%B8%83%E5%90%8D%E5%8D%95.pdf",
@@ -3116,7 +3128,7 @@
         "scope": "说明油车码头街与董家渡的地理关系。"
       }
     ],
-    "notes": "推测，无出处，路名可能与榨油作坊和码头有关。",
+    "notes": "推测，无出处：码头本身的名字可能与榨油作坊有关。",
     "location": {
       "kind": "line",
       "point": [121.498855, 31.210917],
@@ -3307,14 +3319,28 @@
   {
     "name": "海潮路",
     "pinyin": "Haichao Lu",
-    "old_names": [],
+    "old_names": [
+      "海潮寺桥南街（据朱少伟访谈所记旧称）"
+    ],
     "district": "黄浦区",
     "area_group": "其他",
-    "naming_type": [],
-    "story": "",
+    "naming_type": [
+      "其他"
+    ],
+    "story": "黄浦海潮路的名字来自陆家浜边的海潮寺。1876年，杭州海潮寺的住持在这里建了一处下院，起初只有几间茅屋，后来扩建，改称留云禅寺。朱少伟寻访旧址时，一位老居民记得，陆家浜上原有座木桥，人们仍管它叫海潮寺桥。桥南那条路早先叫海潮寺桥南街，后来才简称海潮路。",
     "fun_fact": "靠近南浦大桥的海潮路，与浦东大团镇的一条路同名。",
-    "credibility": "待考",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "《上海地名志》海潮路条 · 上海图书馆",
+        "url": "https://data.library.sh.cn/entity/road/fwl64jciqo0hiqi5",
+        "scope": "原南市区海潮路条直记以原海潮寺命名，所记路段北起陆家浜路。"
+      },
+      {
+        "title": "朱少伟《“云翔四海而根留于祖基”》· 上海九三",
+        "url": "https://www.sh93.gov.cn/msgpage/eb4de842-ac31-444b-a98b-35c841b5227c/20260403091121.pdf#page=41",
+        "scope": "刊本第40页引1922年《上海指南》记建寺经过，另记采访当地居民所得的桥名、街名。"
+      },
       {
         "title": "《其他区域道路停车场明细表》",
         "url": "https://www.pudong.gov.cn/019003001003/20211221/329471/cb43414ee82d46d3a562fcac97393a90.pdf",
@@ -3379,6 +3405,16 @@
     "credibility": "待考",
     "sources": [
       {
+        "title": "民政部 · 中国国家地名信息库《海潮村》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=eff73b2e50f1856ada595b105b133a94&url=stname/detailsPub",
+        "scope": "解释大团的村名来自原海潮寺，所述对象为村名。"
+      },
+      {
+        "title": "浦东新区农业农村委员会 · 大团镇2025年高标准农田建设项目批复",
+        "url": "https://www.pudong.gov.cn/zwgk/gkml_ywl_xczx/2025/258/345868/4ac33a366fb24d1b9b26918bf8633be0.pdf",
+        "scope": "海潮村4号灌区以海潮路为南界。"
+      },
+      {
         "title": "《2019年大团镇市级财政专项补助资金乡镇分配结果》",
         "url": "https://www.pudong.gov.cn/zwgk/czzxzj-dtzczxx/2022/273/17949/ccaff76cd31d452ca35eed825c319d7f.pdf",
         "scope": "第 3845 项的地址含“大团镇海潮路”，可与黄浦的路段表对照。"
@@ -3389,7 +3425,7 @@
         "scope": "附件二第 5 项列出黄浦海潮路的国货路至陆家浜路段。"
       }
     ],
-    "notes": "与黄浦区的海潮路重名。",
+    "notes": "与黄浦海潮路重名。大团镇海潮村的名字来自村境内原有的海潮寺。农田项目批复能确认村内有这条路，所引资料没有说明它为什么取名海潮路。",
     "location": {
       "kind": "point",
       "point": [121.7582176, 30.9595399],
@@ -3425,12 +3461,17 @@
     "credibility": "待考",
     "sources": [
       {
+        "title": "宝山区文旅局 · 吴淞口国际邮轮旅游休闲区导览",
+        "url": "https://xxgk.shbsq.gov.cn/article.html?infoid=2c38067f-bbc6-4063-83c8-74036bd7d392",
+        "scope": "“诉点故事”一节说明零点广场的命名缘由。"
+      },
+      {
         "title": "宝山区政府《2025上海长滩艺术节宝山吴淞口空中剧场烟花无人机表演活动交通管制通告》",
         "url": "https://www.shanghai.gov.cn/nw17239/20250928/4ef8bd1a58cf442a851e3b326fb98fa9.html",
         "scope": "列出了零点大道与宝杨路、长江江堤的位置关系。"
       }
     ],
-    "notes": "",
+    "notes": "宝山区文旅局记载附近的零点广场取名于“吴淞零点”，这篇介绍只解释了广场的名字。",
     "location": {
       "kind": "point",
       "point": [121.49906, 31.40509],
@@ -3623,15 +3664,27 @@
     "name": "百官街",
     "pinyin": "Baiguan Jie",
     "old_names": [
-      "派克弄（Park Lane，19世纪末至1943年）"
+      "派克林路、派克弄、派克街（Park Lane，19世纪末筑，1943年改名）"
     ],
     "district": "虹口区",
     "area_group": "虹口北外滩",
-    "naming_type": [],
-    "story": "",
-    "fun_fact": "南起塘沽路、北至昆山路，紧挨昆山公园西侧，向西接100米长的昆山花园路。",
-    "credibility": "待考",
+    "naming_type": [
+      "行政区名"
+    ],
+    "story": "昆山公园西边的百官街，借的是浙江上虞的地名。十九世纪末筑路时，这条小街叫 Park Lane，中文写法倒有好几个，有人叫它派克林路，也有派克弄、派克街的叫法。1943年改用浙江百官的名字。翻开《上海地名志》，当时记下的街景里，沿路是住宅，还有区少年宫和学校。",
+    "fun_fact": "2018年昆山公园扩建时拆除了围墙，扩建后的公园西边正好是百官街。",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "《上海地名志》百官街条 · 上海图书馆",
+        "url": "https://data.library.sh.cn/entity/road/6ywt15yeyfgsgxp5",
+        "scope": "记载19世纪末筑路、Park Lane的几种中文旧称、1943年取名浙江百官和沿街设施。"
+      },
+      {
+        "title": "朱刚《上海“崧厦街”的历史由来》· 上虞日报",
+        "url": "https://collection.sina.cn/yejie/2017-11-23/detail-ifypapmz4060098.d.html",
+        "scope": "文末将百官街列入取名于上虞乡镇的上海街道。新浪转载。"
+      },
       {
         "title": "虹口区人民政府 · 昆山公园“升级”再现百年英伦范",
         "url": "https://www.shhk.gov.cn/xwzx/002003/20181107/c6c33747-5dd4-4839-b173-ef486da4e1ed.html",
@@ -3648,11 +3701,11 @@
         "scope": "记有原名派克弄（Park Lane，19世纪末至1943年）改称百官街。"
       }
     ],
-    "notes": "1943年由派克弄改今名；坊间多说“百官”取自浙江上虞百官镇，待核地方志原文。",
+    "notes": "",
     "location": {
       "kind": "line",
       "point": [121.481911, 31.251352],
-      "description": "北外滩街道，昆山公园西侧，南起塘沽路，北至昆山路。",
+      "description": "北外滩街道，图中标出昆山公园西侧的具名路段。",
       "sources": [
         {
           "title": "OpenStreetMap · 百官街",
@@ -3793,11 +3846,23 @@
     "old_names": [],
     "district": "静安区",
     "area_group": "其他",
-    "naming_type": [],
-    "story": "",
+    "naming_type": [
+      "行政区名"
+    ],
+    "story": "安业路先有名字，隔了四年才开始筑路。1984年做规划时，上海借用山西地名“安业”给这条路命名，1988年开工。同年，保德路口的一片老公房也建了起来。往后的日子里，居民沿着安业路的院墙买菜，熟食店、早点铺陆续开张。2017年底路口整修，墙边换上了花草。",
     "fun_fact": "1984年与邻近的临汾路、保德路同批定名，南北走向穿过彭浦新村一带。",
-    "credibility": "待考",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《安业路》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=9bd41c2a28ea981780bb24c29234350a&url=stname/detailsPub",
+        "scope": "“地名含义”记安业取自山西地名；沿革记1984年规划命名、1988年始建。"
+      },
+      {
+        "title": "上观新闻 · 安业路、保德路路口改造走访",
+        "url": "https://www.jfdaily.com/wx/detail.do?id=95958",
+        "scope": "2018年报道记保德路425弄建成时间、沿墙的菜场和路口改造。"
+      },
       {
         "title": "静安区人民政府 · 安业路300弄5号公示图",
         "url": "https://www.jingan.gov.cn/main/5b7c0df5-fdcd-4964-bff3-6c3651071143/eed3b3db-af5c-41ff-b553-c46770c11b50/%E9%9D%99%E5%AE%89%E5%8C%BA%E5%AE%89%E4%B8%9A%E8%B7%AF300%E5%BC%845%E5%8F%B7%E5%85%AC%E7%A4%BA%E5%9B%BE.pdf",
@@ -3809,7 +3874,7 @@
         "scope": "第9页据《上海地名志》记录安业路于1984年与临汾路、保德路同批命名。"
       }
     ],
-    "notes": "周边同批道路多以山西地名命名，安业路是否取自山西临县安业乡，待核地方志原文。",
+    "notes": "国家地名信息库仅记取自山西地名，没有指明对应的乡镇。",
     "location": {
       "kind": "line",
       "point": [121.452766, 31.315772],
@@ -3844,14 +3909,23 @@
   {
     "name": "黄金城道",
     "pinyin": "Huangjincheng Dao",
-    "old_names": [],
+    "old_names": [
+      "司水路（据国家地名信息库沿革栏，1993年改今名）"
+    ],
     "district": "长宁区",
     "area_group": "其他",
-    "naming_type": [],
-    "story": "",
+    "naming_type": [
+      "当代新命名"
+    ],
+    "story": "古北的黄金城道先有了路名，后来才有步行街。国家地名信息库记载，司水路在1993年改称黄金城道。命名时考虑了古北面向海外居民的社区规划，也考虑了法国建筑师沿中轴线对称布置道路的设计。步行街到2001年才开始筹划，2009年开街，中央广场树荫下摆上了长凳。",
     "fun_fact": "古北新区二期的开放式景观步行街，2001年筹划、2009年开街，深秋时以成排银杏闻名。",
-    "credibility": "待考",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《黄金城道》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=86a4dfe0c451693778a3be905a72a36c&url=stname/detailsPub",
+        "scope": "沿革栏记1993年由司水路改名，含义栏讲到古北的居民和法国建筑师的道路设计。"
+      },
       {
         "title": "长宁区人民政府 · “古北新区”的前世今生",
         "url": "https://www.shcn.gov.cn/col7343/20241008/1269131.html",
@@ -3868,7 +3942,7 @@
         "scope": "核对黄金城道今属长宁区虹桥街道及银杏景观。"
       }
     ],
-    "notes": "周边古北片区多有蓝宝石路、玛瑙路、富贵东道等路名，但“黄金城道”确切命名批文待核。",
+    "notes": "",
     "location": {
       "kind": "line",
       "point": [121.394758, 31.197162],
@@ -4022,11 +4096,28 @@
     "old_names": [],
     "district": "徐汇区",
     "area_group": "其他",
-    "naming_type": [],
-    "story": "",
+    "naming_type": [
+      "行政区名"
+    ],
+    "story": "在漕河泾，梅果路和桂果路交会，地名资料能说清其中一个“果”字从哪里来。桂果是贵州省织金县的一个镇，上海在上世纪八十年代把整个镇名借来，写在了这里的路牌上。2021年底，交警调整园区高峰时段的车流，桂果路上从梅果路到全州路的一段也用上了可变车道。",
     "fun_fact": "位于徐汇漕河泾开发区，纵贯田林路、宜山路、钦江路至漕宝路，并与梅果路、平果路相接。",
-    "credibility": "待考",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《桂果路》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=b79fc618e897b088754a916eb434d4f0&url=stname/detailsPub",
+        "scope": "含义栏指明借名贵州省织金县桂果镇；沿革栏记1988年辟筑、命名。"
+      },
+      {
+        "title": "上海图书馆 · 桂果路",
+        "url": "https://data.library.sh.cn/entity/road/siswbsswb462p5rl",
+        "scope": "道路名称起始日期标为1986年8月21日。"
+      },
+      {
+        "title": "上海市公安局徐汇分局 · 关于第1167号提案的会办意见",
+        "url": "https://gaj.sh.gov.cn/xhga/list/toGjDetail?lmName=%E5%BB%BA%E8%AE%AE%E6%8F%90%E6%A1%88%E7%BB%93%E6%9E%9C%E5%85%AC%E5%BC%80&lmUrl=list%2FtoGjIndex%3Fpa%3D31a44426d19f0303c233c123bd071f31b182bf32f525aa69&pa=c756679f93e8708fdfeb0feb8ab6e810ebabd5f51df5be6fc911ed509e638d4a",
+        "scope": "说明梅果路至全州路的可变车道和实施时间。"
+      },
       {
         "title": "上海市规划和自然资源局 · “桂果路新建工程”规划设计方案（调整）公示",
         "url": "https://ghzyj.sh.gov.cn/nw2268/20200110/0032-896874.html",
@@ -4038,7 +4129,7 @@
         "scope": "核对桂果路所在徐汇区道路体系。"
       }
     ],
-    "notes": "周边漕河泾片区道路多用广西地名或“桂”字系列，但“桂果”二字具体命名依据待考。",
+    "notes": "上图将名称起始日期标为1986年8月21日，国家地名信息库沿革栏将辟筑、命名记在1988年。",
     "location": {
       "kind": "line",
       "point": [121.396187, 31.171533],
@@ -4098,6 +4189,11 @@
     "fun_fact": "徐汇漕河泾开发区内的一条短街，西起虹梅路，向东直抵桂果路南段。",
     "credibility": "待考",
     "sources": [
+      {
+        "title": "徐汇区环境卫生作业服务招标需求 · 道路明细",
+        "url": "https://sh-gov-open-doc.oss-cn-shanghai.aliyuncs.com/1014AN/undefined/319900/2100000000055115/20247/4df270a7-d898-4c61-b6d6-30f075d46ffd.pdf",
+        "scope": "序号178记梅果路在桂果路与虹梅路之间，表内仅能核对位置。"
+      },
       {
         "title": "SmartShanghai · 桂果路与梅果路交叉口地理卡片",
         "url": "https://www.smartshanghai.com/taxi/26969",
@@ -4850,11 +4946,23 @@
     "old_names": [],
     "district": "浦东新区",
     "area_group": "浦东",
-    "naming_type": [],
-    "story": "",
-    "fun_fact": "浦东新区南码头路街道的一条短支路，西接南码头路，东至胶南路，紧邻浦南医院西院北侧。",
-    "credibility": "待考",
+    "naming_type": [
+      "其他"
+    ],
+    "story": "1983年，浦南医院北侧围墙外修了一条支路。给它取名时，就近借了南码头路的名字，于是有了南码头支路。顺着上海市交通委的道路表找过去，从南码头路到浦东南路，这段只长约一百九十米。多年后浦南医院西院改扩建，规划公示里还是用这条小路来标医院的北界。",
+    "fun_fact": "浦南医院西院改扩建的规划公示，把胶南路列为院区东界，南码头支路列为北界。",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《南码头支路》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=3d832554e3fb6507b4af5ea615895513&url=stname/detailsPub",
+        "scope": "含义与沿革两栏记1983年浦南医院北墙外筑路，因邻近南码头路而得名。"
+      },
+      {
+        "title": "上海市交通委员会 · 浦东新区第三批自动驾驶开放测试道路明细表",
+        "url": "https://jtw.sh.gov.cn/zxzfxx/20250318/841d57cb7b8442a2ba43e34f81811d02.html",
+        "scope": "附件2列出南码头路至浦东南路的路段，里程0.19公里。"
+      },
       {
         "title": "上海市规划和自然资源局 · “浦南医院改扩建工程（西院）项目”规划设计方案公示",
         "url": "https://ghzyj.sh.gov.cn/nw2268/20200110/0032-895341.html",
@@ -4866,11 +4974,11 @@
         "scope": "第7页记有主干道南码头路于1948年定名。"
       }
     ],
-    "notes": "应随邻近的南码头路派生得名，具体辟筑与定名年份待核。",
+    "notes": "",
     "location": {
       "kind": "line",
       "point": [121.505215, 31.199853],
-      "description": "浦东新区南码头路街道，西起南码头路，东至胶南路。",
+      "description": "浦东新区南码头路街道，浦南医院西院北侧；市交通委列出的路段为南码头路至浦东南路。",
       "sources": [
         {
           "title": "OpenStreetMap · 南码头支路",
@@ -5023,15 +5131,22 @@
     "name": "惠南梅花路",
     "pinyin": "Huinan Meihua Lu",
     "old_names": [
-      "梅花路（原南汇惠南镇旧称，现部分政务名录仍作惠南镇梅花路）"
+      "梅花路（1988—2006年）"
     ],
     "district": "浦东新区",
     "area_group": "浦东",
-    "naming_type": [],
-    "story": "",
-    "fun_fact": "2009年原南汇区并入浦东新区后，惠南镇梅花路与花木街道梅花路同属一区，街道路牌与16号线惠南站指示常写作“惠南梅花路”。",
-    "credibility": "待考",
+    "naming_type": [
+      "其他"
+    ],
+    "story": "惠南梅花路的名字分两次才定下来。1988年，梅花新村西边这条路借了新村的名字，起初只叫梅花路。2006年上海整治同名道路，才在路名前面加上“惠南”两字。短名字也留在了日常地址里：浦东的公共服务机构名录上，仍能找到“惠南镇梅花路185号”这个门牌。",
+    "fun_fact": "在浦东的招生地段表上，分别可以找到惠南镇和花木的梅花路。",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《惠南梅花路》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=1184c5f4c75a8d8ed77a96c111c37eb1&url=stname/detailsPub",
+        "scope": "含义栏记因位于梅花新村西侧得名，沿革栏记1988年定名和2006年同名道路整治。"
+      },
       {
         "title": "浦东新区人民政府 · 2025年浦东新区公办中小学招生地段公示表",
         "url": "https://www.pudong.gov.cn/zwgk/ywjy/2025/105/340085/9ced26f29b0347249444eb92eb76b701.xlsx",
@@ -5048,7 +5163,7 @@
         "scope": "记有轨道交通16号线惠南站3号口出入口指示“拱极路，惠南梅花路”。"
       }
     ],
-    "notes": "与浦东新区花木街道的梅花路同区重名；原路定名与加冠“惠南”的具体批文待核。",
+    "notes": "",
     "location": {
       "kind": "line",
       "point": [121.756119, 31.053565],
@@ -5102,22 +5217,39 @@
     "old_names": [],
     "district": "浦东新区",
     "area_group": "浦东",
-    "naming_type": [],
-    "story": "",
-    "fun_fact": "位于浦东新区惠南镇老城，南起人民东路、北至东门大街，紧邻三八新村。",
-    "credibility": "待考",
+    "naming_type": [
+      "其他"
+    ],
+    "story": "上世纪五十年代，惠南镇的妇女参加义务劳动，在东门街与人民路之间修出一条土路。按《新闻晨报》引述的《惠南镇志》，这段路长约二百五十三米，宽约四米，就是今天三八路的北段。国家地名信息库也记下了筑路人的身份：路名里的“三八”取自妇女节，纪念出力修路的妇女。",
+    "fun_fact": "2019年，惠南镇向居民征集老照片，征集启事还特意提起记忆里热闹的人民路和三八路。",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《三八路》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=5f2357f3ae9a3f2b3840809dcd3abbcc&url=stname/detailsPub",
+        "scope": "含义栏指明妇女义务筑路，以妇女节命名。沿革栏记20世纪50年代中期筑路、1981年命名。"
+      },
+      {
+        "title": "新闻晨报《上海藏着两条“三八路”》",
+        "url": "https://www.toutiao.com/article/7479355149891158554/",
+        "scope": "新闻晨报账号2025年3月8日的报道引《惠南镇志》，记筑路者、得名缘由、年份、原路尺寸和路段。"
+      },
+      {
+        "title": "幸福惠南《向全社会征集南汇老县、区政府的老照片》· 周到",
+        "url": "https://static.zhoudaosh.com/files/cnews/2019/20190410/EDB9F60836491720027636247EF9F2F38F1CC6B85C3ED37E8F70EA5CC9396191/1.html",
+        "scope": "2019年惠南镇的征集启事提到人民路、三八路。"
+      },
       {
         "title": "浦东新区人民政府 · 2025年浦东新区公办中小学招生地段公示表",
         "url": "https://www.pudong.gov.cn/zwgk/ywjy/2025/105/340085/9ced26f29b0347249444eb92eb76b701.xlsx",
         "scope": "列有惠南镇三八路、三八路94弄至123弄及三八新村。"
       }
     ],
-    "notes": "推测，无出处，可能与三八国际妇女节纪念命名或周边三八新村有关。",
+    "notes": "国家地名信息库记为20世纪50年代中期筑路、1981年命名。《新闻晨报》引《惠南镇志》记为1959年春筑路并定名。两者对筑路者与路名的联系记载一致。",
     "location": {
       "kind": "line",
       "point": [121.754987, 31.049863],
-      "description": "浦东新区惠南镇，南起人民东路，北至东门大街。",
+      "description": "浦东新区惠南镇，图中标出人民东路与东门大街之间的具名路段。",
       "sources": [
         {
           "title": "OpenStreetMap · 三八路",
@@ -5148,18 +5280,25 @@
     "old_names": [],
     "district": "浦东新区",
     "area_group": "浦东",
-    "naming_type": [],
-    "story": "",
+    "naming_type": [
+      "河道桥梁遗存"
+    ],
+    "story": "浦东沪东的嘴角路，名字指的是附近黄浦江的一个转角。地名资料还记下了成路以前的模样：庆宁寺门前原来有一条河浜，通往油库的是一段台阶路，只有二十三米长。到了上世纪八十年代初，这里填掉河浜筑起马路，人们取黄浦江转弯的地形给它起了“嘴角路”这个名字。",
     "fun_fact": "藏在浦东新区金桥路与道堂路一带的短街，毗邻浦东大道2778弄及今达花苑、大桥花苑。",
-    "credibility": "待考",
+    "credibility": "已查证",
     "sources": [
+      {
+        "title": "民政部 · 中国国家地名信息库《嘴角路》",
+        "url": "https://dmfw.mca.gov.cn/details.html?type=1&id=f23477abaff9336d22bf68a2901a043f&url=stname/detailsPub",
+        "scope": "含义栏记因邻近黄浦江转角得名，沿革栏记庆宁寺前的河浜、通油库的台阶路和填浜年代。"
+      },
       {
         "title": "上海市人民政府 · 浦东新区幼儿园招生地段表",
         "url": "https://www.shanghai.gov.cn/cmsres/36/36d39b2a6ac24c8bab1e4e925e5de725/39bdcfefdda5860d42144135b0443836.xls",
         "scope": "表内将浦东新区嘴角路与今达花苑、大桥花苑、殷家宅、浦东大道2778弄列于同一招生片区。"
       }
     ],
-    "notes": "上海方言常称江河拐弯处凸出陆地为“嘴”或“嘴角”，但该路具体筑路年代与得名由来待考。",
+    "notes": "",
     "location": {
       "kind": "line",
       "point": [121.566853, 31.269895],
