@@ -20,6 +20,8 @@ BASEMAP = ROOT / "assets/shanghai-map.json.gz"
 LANDMARKS = ROOT / "data/landmarks.json"
 OUTLINE = ROOT / "data/shanghai-outline.json"
 SIGNATURE = ROOT / "assets/signature.woff2"
+ICON_SVG = ROOT / "assets/favicon.svg"
+ICON_ICO = ROOT / "assets/favicon.ico"
 MAP_STYLE = ROOT / "templates/map.css"
 MAP_SCRIPT = ROOT / "templates/map.js"
 OUTPUT = ROOT / "dist/index.html"
@@ -225,21 +227,28 @@ def build(roads):
     geography["landmarks"] = json.loads(LANDMARKS.read_text(encoding="utf-8"))
     geography["outline"] = json.loads(OUTLINE.read_text(encoding="utf-8"))
     illustration, signature = ART.read_bytes(), SIGNATURE.read_bytes()
+    icon_svg, icon_ico = ICON_SVG.read_bytes(), ICON_ICO.read_bytes()
 
-    def render(basemap, image_url, font_url, offline_note):
+    def render(basemap, image_url, font_url, svg_url, ico_url, offline_note):
         return (template.replace("@@CSS@@", style.replace("@@SIGNATURE@@", font_url))
                 .replace("@@MAPJS@@", script).replace("@@ART@@", image_url)
+                .replace("@@ICON_SVG@@", svg_url).replace("@@ICON_ICO@@", ico_url)
                 .replace("@@OFFLINE_NOTE@@", offline_note)
                 .replace("@@BASEMAP@@", basemap).replace("@@ARCHIVE@@", dataset).encode())
 
-    offline = render(compact(geography),
-                     "data:image/jpeg;base64," + base64.b64encode(illustration).decode(),
-                     "data:font/woff2;base64," + base64.b64encode(signature).decode(), "地图可离线浏览。")
+    def data_url(mime, data):
+        return f"data:{mime};base64," + base64.b64encode(data).decode()
+
+    offline = render(compact(geography), data_url("image/jpeg", illustration),
+                     data_url("font/woff2", signature), data_url("image/svg+xml", icon_svg),
+                     data_url("image/x-icon", icon_ico), "地图可离线浏览。")
     hosted_map = web_map(geography)
     locations = [{k: road[k] for k in ("name", "district", "location")} for road in roads if "location" in road]
     hosted_map["download"] = site_asset("geography", "json", compact(dict(geography=geography, locations=locations)).encode())
     online = render(compact(hosted_map), site_asset("tram", "jpg", illustration),
-                    site_asset("signature", "woff2", signature), "在线地图按当前视野载入街道。")
+                    site_asset("signature", "woff2", signature), site_asset("favicon", "svg", icon_svg),
+                    "favicon.ico", "在线地图按当前视野载入街道。")
+    write_output(SITE / "favicon.ico", icon_ico)
     write_output(SITE / "index.html", online)
     write_output(OUTPUT, offline)
 
@@ -279,7 +288,8 @@ def main():
     previous = None
     try:
         while True:
-            current = tuple(file_stamp(p) for p in (DATA, LANDMARKS, OUTLINE, TEMPLATE, MAP_STYLE, MAP_SCRIPT, ART, SIGNATURE, BASEMAP))
+            current = tuple(file_stamp(p) for p in (DATA, LANDMARKS, OUTLINE, TEMPLATE, MAP_STYLE, MAP_SCRIPT,
+                                                    ART, SIGNATURE, ICON_SVG, ICON_ICO, BASEMAP))
             if current != previous:
                 previous = current
                 check(DATA, True)
