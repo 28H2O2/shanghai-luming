@@ -270,6 +270,7 @@ function draw() {
   byId('zoom-in').disabled=scale>=maximumScale;byId('zoom-out').disabled=scale<=minimumScale;
 }
 const statusClass={'已查证':'','待考':' pending','传说':' legend'};
+const originLabels={'已查证':'由来有据','待考':'由来未详','传说':'民间传说'};
 const markerNodes=roads.map((r,i)=>{
   if(!position[i])return null;
   const button=el('button','mark'+statusClass[r.credibility]);
@@ -332,7 +333,7 @@ function renderStory(i) {
   const road=roads[i], loc=road.location, story=byId('story');story.replaceChildren();
   story.append(el('h2','road-title',road.name));
   const meta=el('div','badge-line');
-  meta.append(el('span','',road.district),el('span','state'+statusClass[road.credibility],road.credibility));
+  meta.append(el('span','',road.district),el('span','state'+statusClass[road.credibility],originLabels[road.credibility]));
   story.append(meta,el('p','loc',loc?locLabel[loc.kind]+' · '+loc.description:'位置待核，暂未标绘。'));
   if(loc) {
     const [lon,lat]=loc.point;
@@ -340,11 +341,12 @@ function renderStory(i) {
       'https://www.openstreetmap.org/?mlat='+lat+'&mlon='+lon+'#map=17/'+lat+'/'+lon);
     link.className='crosslink';story.append(link);
   }
-  field(story,road.credibility==='传说'?'民间传说':'路名由来',road.story||'待考');
+  const originText=road.credibility==='待考'?'本条收录的资料没有说明路名的由来。':road.story;
+  field(story,road.credibility==='传说'?'民间传说':'路名由来',originText);
   if(road.fun_fact)field(story,'街头拾零',road.fun_fact);
   if(road.old_names.length)field(story,'旧名',road.old_names.join('、'));
-  field(story,'归档',road.area_group+' · '+(road.naming_type.join('、')||'命名类型待考'));
-  story.append(el('h3','','故事与地址出处'));citations(story,road.sources);
+  field(story,'归档',[road.area_group,...road.naming_type].join(' · '));
+  story.append(el('h3','','条目出处'));citations(story,road.sources);
   if(loc){story.append(el('h3','','定位依据'));citations(story,loc.sources);}
   if(road.legend){const extra=el('section','legend-block');field(extra,'另录 · 民间传说',road.legend.text);citations(extra,road.legend.sources);story.append(extra);}
   if(road.notes)field(story,'收藏备注',road.notes,'annotation');
@@ -380,9 +382,9 @@ byId('back').addEventListener('click',()=>{
 });
 const rows=roads.map((r,i)=>{
   const li=el('li'),button=el('button','row');button.type='button';
-  button.setAttribute('aria-label',r.name+'，'+r.district+'，'+r.credibility);
+  button.setAttribute('aria-label',r.name+'，'+r.district+'，'+originLabels[r.credibility]);
   const copy=el('span','row-copy'), heading=el('span','row-label');
-  heading.append(el('span','row-name',r.name),el('span','state'+statusClass[r.credibility],r.credibility));
+  heading.append(el('span','row-name',r.name),el('span','state'+statusClass[r.credibility],originLabels[r.credibility]));
   const names=r.district+(r.location?.kind==='area'?' · 片区参考':r.location?.kind==='point'?' · 路口定位':'');
   copy.append(heading,el('span','row-place',names));
   button.append(el('span','index-number',String(i+1).padStart(2,'0')),copy,icon('down','ic go'));
@@ -391,8 +393,11 @@ const rows=roads.map((r,i)=>{
 });
 const norm=v=>v.normalize('NFKC').toLowerCase().replace(/\s+/gu,'');
 const queryInput=byId('query'), area=byId('area'), type=byId('type'), state=byId('state');
-function options(select,label,values){select.add(new Option(label,''));for(const v of values)select.add(new Option(v,v));}
-options(area,'全部区域',archive.areas);options(type,'命名类型',archive.types);options(state,'可信度',archive.states);
+function options(select,label,values,labels={}){
+  select.add(new Option(label,''));
+  for(const v of values)select.add(new Option(labels[v]??v,v));
+}
+options(area,'全部区域',archive.areas);options(type,'命名类型',archive.types);options(state,'路名由来',archive.states,originLabels);
 function filter(reframe=true) {
   const term=norm(queryInput.value);visible=[];
   roads.forEach((r,i)=>{

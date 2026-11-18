@@ -33,7 +33,7 @@
 <label class="search"><svg class="ic" aria-hidden="true"><use href="#search"/></svg><input type="search" id="query" aria-label="搜索路名、旧名或拼音" placeholder="搜索路名、旧名或拼音" autocomplete="off"></label>
 <label class="select"><select id="area" aria-label="区域"></select><svg class="ic down" aria-hidden="true"><use href="#down"/></svg></label>
 <label class="select"><select id="type" aria-label="命名类型"></select><svg class="ic down" aria-hidden="true"><use href="#down"/></svg></label>
-<label class="select"><select id="state" aria-label="可信度"></select><svg class="ic down" aria-hidden="true"><use href="#down"/></svg></label></form>
+<label class="select"><select id="state" aria-label="路名由来"></select><svg class="ic down" aria-hidden="true"><use href="#down"/></svg></label></form>
 <button class="reset" id="reset" type="button" hidden>清除筛选</button></div>
 <noscript>请启用 JavaScript 以查看交互地图。</noscript><ul class="roadlist" id="roads"></ul><div class="empty" id="empty" hidden>没有符合条件的路名。<br><button type="button" id="showall">查看全部收藏</button></div></div>
 <section class="details" id="details" aria-label="所选道路" hidden><button id="back" class="back" type="button">← 返回路名索引</button><div id="story"></div></section>
@@ -41,7 +41,7 @@
 </main>
 <dialog id="rules" aria-labelledby="rules-title"><img class="dialog-pic" data-src="@@ART@@" decoding="async" alt="创作插画，上海街角的电车"><div class="dialog-content"><div class="dialog-top"><h2 id="rules-title">收录说明</h2><button id="close" aria-label="关闭" type="button">×</button></div>
 <p>地图优先标出公园、校园和地标。指向或轻点有名称的街道可以看路名。带圆点的是收藏道路，点开可读故事、旧名和出处。同名道路按所在区区分。</p>
-<p><b>已查证</b>的条目有直接解释命名的资料。<b>传说</b>单独记录流传的讲法。标为<b>待考</b>的路也可以有明确位置，故事栏会等到有出处时再补上。</p>
+<p><b>由来有据</b>表示条目引用的资料记载了路名的来历。<b>由来未详</b>表示现有出处能找到这条路，却没有说明名字是怎么来的。<b>民间传说</b>单列流传的说法，并注明哪里记载了它。</p>
 <p>底图来自 <a href="https://download.geofabrik.de/asia/china/shanghai.html" target="_blank" rel="noopener noreferrer">Geofabrik 上海摘录</a>，长江口等水面另取自 OpenFreeMap 的 OpenMapTiles 水面图层。@@OFFLINE_NOTE@@道路资料注明坐标依据和定位精度。底图与 OSM 道路几何按 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a> 提供。<button id="download-map" class="reset" type="button">下载本页地理数据</button></p>
 </div></dialog>
 <script type="application/json" id="dataset">@@ARCHIVE@@</script>
