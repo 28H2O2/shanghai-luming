@@ -83,3 +83,5 @@ python3 scripts/validate.py --build
 第一条命令只校验。第二条通过校验后，用 `templates/` 中的页面、样式、地图交互脚本和 `assets/` 中的素材生成两个入口。双击 `dist/index.html` 可离线使用全部功能，也可以单独分享这个文件。在线版生成在 `out/`，首页包含路名故事、道路定位和主要水系，详细底图随平移或缩放按视野加载；插画在打开收录说明时加载。也可把另一份数据文件的路径作为校验脚本的位置参数，单独检查。结构检查覆盖字段、枚举、字数、链接格式和传说出处，资料能否证明某个命名说法仍需阅读原文判定。
 
 本地更新后，将新版本发布至同一 Sites 项目，在线页才会随之更新。发布前运行 `--build`，站点入口为 `out/index.html`。Sites 配置见 `.openai/hosting.json`。收录说明中的电车街景为创作插画。
+
+Vercel 从 GitHub 仓库 `28H2O2/shanghai-luming` 的 `main` 分支部署。推送后，Vercel 按 `vercel.json` 的配置运行上述校验和构建，将 `out/` 发布到 [上海鹿鸣](https://shanghai-luming.vercel.app/)。校验或构建失败时，线上继续使用上一次成功的版本。
