@@ -18,6 +18,7 @@ TEMPLATE = ROOT / "templates/collection.html"
 ART = ROOT / "assets/shanghai-tram.jpg"
 BASEMAP = ROOT / "assets/shanghai-map.json.gz"
 LANDMARKS = ROOT / "data/landmarks.json"
+OUTLINE = ROOT / "data/shanghai-outline.json"
 SIGNATURE = ROOT / "assets/signature.woff2"
 MAP_STYLE = ROOT / "templates/map.css"
 MAP_SCRIPT = ROOT / "templates/map.js"
@@ -222,6 +223,7 @@ def build(roads):
     dataset = compact(dict(roads=roads, areas=AREAS, types=TYPES, states=STATES))
     geography = json.loads(gzip.decompress(BASEMAP.read_bytes()))
     geography["landmarks"] = json.loads(LANDMARKS.read_text(encoding="utf-8"))
+    geography["outline"] = json.loads(OUTLINE.read_text(encoding="utf-8"))
     illustration, signature = ART.read_bytes(), SIGNATURE.read_bytes()
 
     def render(basemap, image_url, font_url, offline_note):
@@ -277,7 +279,7 @@ def main():
     previous = None
     try:
         while True:
-            current = tuple(file_stamp(p) for p in (DATA, LANDMARKS, TEMPLATE, MAP_STYLE, MAP_SCRIPT, ART, SIGNATURE, BASEMAP))
+            current = tuple(file_stamp(p) for p in (DATA, LANDMARKS, OUTLINE, TEMPLATE, MAP_STYLE, MAP_SCRIPT, ART, SIGNATURE, BASEMAP))
             if current != previous:
                 previous = current
                 check(DATA, True)

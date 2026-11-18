@@ -15,6 +15,7 @@ const bounds = geography.bounds;
 const mapBounds = [project([bounds[0],bounds[3]]), project([bounds[2],bounds[1]])];
 const view = {center:cityCenter.slice(),scale:0.08,width:1,height:1,mode:'city'};
 let visible = roads.map((_,index)=>index), selected = null, frame = 0, priorView = null;
+let pickedStreet = null;
 const maximumScale = 1.55;
 let minimumScale = 0;
 function el(tag, cls, text) {
@@ -68,10 +69,21 @@ const position = roads.map(road => {
 });
 const mappedPoints=position.flatMap(pos=>pos?[pos.point,...pos.paths.flat()]:[]);
 const overviewBounds=mappedPoints.length?boundsOf(mappedPoints):mapBounds.flat();
+function collectionView(mode,point) {
+  const [x0,y0,x1,y1]=overviewBounds;
+  const center=[(x0+x1)/2,(y0+y1)/2];
+  if(point){
+    // A clicked basemap street can lie beyond the collection. Keep its pin on screen.
+    [view.width,view.height].forEach((size,axis)=>{
+      const reach=size*.4/minimumScale;
+      center[axis]=Math.max(point[axis]-reach,Math.min(point[axis]+reach,center[axis]));
+    });
+  }
+  camera(center,minimumScale,mode);
+}
 function fitRoads() {
   if(visible.length===roads.length){
-    const [x0,y0,x1,y1]=overviewBounds;
-    camera([(x0+x1)/2,(y0+y1)/2],minimumScale,'all');
+    collectionView('all');
     return;
   }
   const points=visible.flatMap(i=>position[i]?[position[i].point,...position[i].paths.flat()]:[]);
@@ -168,10 +180,12 @@ byId('retry-map').addEventListener('click',()=>{
 const localLandmarks=geography.landmarks.points.map(p=>({name:p.name,kind:p.kind,point:project(p.point)}));
 const placeLabels=geography.places.map(([name,kind,x,y])=>({name,kind,point:pointFromPair(x,y)}));
 const landmarks=[...localLandmarks,...placeLabels.filter(p=>p.kind==='landmark')];
+const theme=getComputedStyle(document.documentElement);
+const roadColors=Object.fromEntries(['road','active-road','pending','legend'].map(name=>[name,theme.getPropertyValue('--'+name).trim()]));
 const mapPalette = {
-  field:'#e4e8d1',block:'#e6e1d3',green:'#d0dfba',building:'#d8d0bf',water:'#a9cfcd',
-  river:'#9bc4c2',canal:'#b0cfcc',rail:'#b7b2a9',lane:'#fffdf5',street:'#fffdf5',
-  secondary:'#fffef4',main:'#fffae5',highway:'#ead5a5'
+  field:'#e2e3d5',block:'#e5ded6',green:'#cfdac6',building:'#d6c7bc',water:'#accbd5',
+  river:'#94bac9',canal:'#a4c3ce',rail:'#afa6a4',lane:'#fffbf6',street:'#fffcf7',
+  secondary:'#fffbf4',main:'#fcf1e2',highway:'#e3c9ab'
 };
 const polygonLayers=['field','block','green','building','water'];
 const roadLayers=['lane','street','secondary','main','highway'];
@@ -187,7 +201,7 @@ function draw() {
   const window=[left,top,right,bottom];
   if(tiles.length) updateTiles(window);
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle='#eeecdf';ctx.fillRect(0,0,width,height);
+  ctx.fillStyle='#ece7e0';ctx.fillRect(0,0,width,height);
   ctx.setTransform(dpr*scale,0,0,dpr*scale,-left*scale*dpr,-top*scale*dpr);
   ctx.lineJoin='round';ctx.lineCap='round';
   const shown={};
@@ -206,7 +220,7 @@ function draw() {
     const path=new Path2D();
     for(const f of shown[kind]) path.addPath(f.path);
     if(roadLayers.includes(kind) && scale>.03) {
-      ctx.strokeStyle=kind==='highway'?'#c5b480':'#d0cbbc';
+      ctx.strokeStyle=kind==='highway'?'#bfa98e':'#cdc3b9';
       ctx.lineWidth=(widths[kind]*widthRatio+1.05)/scale;ctx.stroke(path);
     }
     ctx.strokeStyle=mapPalette[kind];ctx.lineWidth=widths[kind]*widthRatio/scale;
@@ -222,12 +236,21 @@ function draw() {
     for(const points of pos.paths){
       ctx.beginPath();
       points.forEach(([x,y],j)=>j?ctx.lineTo(x,y):ctx.moveTo(x,y));
-      ctx.strokeStyle='#fffbed';ctx.lineWidth=(active?7.4:4.2)/scale;ctx.stroke();
-      ctx.strokeStyle=active?'#a34832':roads[i].credibility==='待考'?'#99652e':'#387361';
+      ctx.strokeStyle='#fff9f1';ctx.lineWidth=(active?7.4:4.2)/scale;ctx.stroke();
+      ctx.strokeStyle=active?roadColors['active-road']:roads[i].credibility==='待考'?roadColors.pending:roads[i].credibility==='传说'?roadColors.legend:roadColors.road;
       ctx.lineWidth=(active?4.3:2.2)/scale;ctx.stroke();
     }
   }
+  if(pickedStreet){
+    ctx.strokeStyle='#fff9f1';ctx.lineWidth=7/scale;ctx.stroke(pickedStreet.feature.path);
+    ctx.strokeStyle=roadColors['active-road'];ctx.lineWidth=4/scale;ctx.stroke(pickedStreet.feature.path);
+  }
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(pickedStreet){
+    const [x,y]=screen(pickedStreet.point);
+    ctx.beginPath();ctx.arc(x,y,5,0,2*Math.PI);ctx.fillStyle=roadColors['active-road'];ctx.fill();
+    ctx.strokeStyle='#fffcf7';ctx.lineWidth=2;ctx.stroke();
+  }
   const collisions=positionMarkers();
   function textLabel(name,point,size,color,strong=false){
     const [x,y]=screen(point);if(x<18||x>width-18||y<16||y>height-18)return false;
@@ -235,7 +258,7 @@ function draw() {
     const half=ctx.measureText(name).width/2, box=[x-half-5,y-size*.7-4,x+half+5,y+size*.7+4];
     if(collisions.some(b=>inWindow(b,box)))return false;
     collisions.push(box);ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.strokeStyle='#f8f6e8e0';ctx.lineWidth=3.2;ctx.strokeText(name,x,y);
+    ctx.strokeStyle='#fff9f2eb';ctx.lineWidth=3.2;ctx.strokeText(name,x,y);
     ctx.fillStyle=color;ctx.fillText(name,x,y);return true;
   }
   const used=new Set();
@@ -243,7 +266,7 @@ function draw() {
     if(used.has(name))return;
     const [x,y]=screen(point),size=13;
     if(x<8||x>width-8||y<12||y>height-12)return;
-    const color=kind==='park'?'#426444':kind==='campus'?'#465b70':'#705338';
+    const color=kind==='park'?'#4d654b':kind==='campus'?'#445b72':'#71533f';
     ctx.font='600 '+size+'px "PingFang SC","Microsoft YaHei",sans-serif';
     const tw=ctx.measureText(name).width;
     for(const [dx,dy] of [[8,0],[-8-tw,0],[-tw/2,-16],[-tw/2,16],[8,-14],[-8-tw,14]]){
@@ -251,7 +274,7 @@ function draw() {
       const box=[tx-3,ty-9,tx+tw+3,ty+9];
       if(box[0]<2||box[2]>width-2||box[1]<2||box[3]>height-2||collisions.some(b=>inWindow(b,box)))continue;
       collisions.push(box,[x-4,y-4,x+4,y+4]);used.add(name);
-      ctx.fillStyle=color;ctx.strokeStyle='#fffdf0';ctx.lineWidth=2;
+      ctx.fillStyle=color;ctx.strokeStyle='#fff9f2';ctx.lineWidth=2;
       ctx.beginPath();
       if(kind==='park'){ctx.arc(x,y,3.8,0,2*Math.PI);}
       else if(kind==='campus'){ctx.rect(x-3.4,y-3.4,6.8,6.8);}
@@ -268,10 +291,10 @@ function draw() {
     if(!p.name || used.has(p.name) || p.kind==='landmark')continue;
     const isDistrict=p.kind==='city'||p.name.endsWith('区')&&p.kind==='suburb';
     if(isDistrict ? scale>.17 : scale<(p.kind==='town'?.03:.16))continue;
-    if(textLabel(p.name,p.point,isDistrict?15:12,'#697767',isDistrict)) used.add(p.name);
+    if(textLabel(p.name,p.point,isDistrict?15:12,'#665e5c',isDistrict)) used.add(p.name);
   }
   for(const f of shown.river)if(f.name&&!used.has(f.name)&&f.anchor&&f.length*scale>=65 &&
-    textLabel(f.name,f.anchor,14,'#497d7b',true))used.add(f.name);
+    textLabel(f.name,f.anchor,14,'#3d687b',true))used.add(f.name);
   const distances=[10,20,50,100,200,500,1000,2000,5000,10000,20000];
   const target=82*metresPerUnit/scale;
   const distance=distances.filter(d=>d<=target).pop()||10;
@@ -302,7 +325,8 @@ function positionMarkers() {
   if(selected!==null)priority.unshift(selected);
   for(let i=0;i<markerNodes.length;i++) if(markerNodes[i]&&!priority.includes(i))markerNodes[i].button.hidden=true;
   const {width,height}=view;
-  const blocked=[[4,3,156,51],[width-43,4,width-5,65],[width-61,height-147,width-3,height-28],[0,height-28,width,height],[0,height-62,182,height-25]];
+  const control=byId('locator').hidden?byId('mapbar'):byId('locator');
+  const blocked=[[0,0,control.offsetLeft+control.offsetWidth+4,control.offsetTop+control.offsetHeight+4],[width-43,4,width-5,65],[width-61,height-147,width-3,height-28],[0,height-28,width,height],[0,height-62,182,height-25]];
   for(const i of priority){
     const m=markerNodes[i];if(!m)continue;
     const [x,y]=screen(position[i].point);
@@ -318,8 +342,8 @@ function positionMarkers() {
         }
       }
       if(mx!==x||my!==y){
-        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(mx,my);ctx.strokeStyle='#637866';ctx.lineWidth=1.3;ctx.stroke();
-        ctx.beginPath();ctx.arc(x,y,2.5,0,2*Math.PI);ctx.fillStyle='#365a47';ctx.fill();
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(mx,my);ctx.strokeStyle='#777783';ctx.lineWidth=1.3;ctx.stroke();
+        ctx.beginPath();ctx.arc(x,y,2.5,0,2*Math.PI);ctx.fillStyle='#445c69';ctx.fill();
       }
     }
     m.button.hidden=false;m.button.style.left=mx+'px';m.button.style.top=my+'px';
@@ -364,13 +388,51 @@ function renderStory(i) {
   if(road.notes)field(story,'收藏备注',road.notes,'annotation');
 }
 let returnSource='row', lastSelected=null;
+// Use the main map's projection for the city outline, river and every road pin.
+const locator=byId('locator');
+const outline=geography.outline.rings.map(ring=>ring.map(project));
+const [west,north,east,south]=boundsOf(outline.flat());
+const locatorScale=Math.min(124/(east-west),78/(south-north));
+function locatorPoint([x,y]){
+  return [68+(x-(west+east)/2)*locatorScale,45+(y-(north+south)/2)*locatorScale];
+}
+function locatorPath(points){
+  return points.map((point,i)=>(i?'L':'M')+locatorPoint(point).map(n=>n.toFixed(2)).join(' ')).join(' ');
+}
+byId('locator-land').setAttribute('d',outline.map(ring=>locatorPath(ring)+'Z').join(' '));
+const huangpuPaths=(grouped.get('river')||[]).filter(f=>f.name==='黄浦江').flatMap(f=>f.parts);
+byId('locator-river').setAttribute('d',huangpuPaths.map(flat=>{
+  const points=[];
+  for(let i=0;i<flat.length;i+=2)points.push(pointFromPair(flat[i],flat[i+1]));
+  return locatorPath(points);
+}).join(' '));
+function hideLocator(){
+  locator.hidden=true;byId('mapbar').hidden=false;
+}
+function showLocator(point,label){
+  const [x,y]=locatorPoint(point);
+  byId('locator-pin').setAttribute('transform','translate('+x+' '+y+')');
+  locator.setAttribute('aria-label',label+'在上海的位置，返回大图');
+  locator.title=label+'在上海的位置 · 返回大图';
+  byId('mapbar').hidden=true;locator.hidden=false;
+}
+function backToOverview(){
+  hideLocator();
+  collectionView('overview',selected!==null?position[selected]?.point:pickedStreet?.point);
+  surface.focus({preventScroll:true});
+}
+locator.addEventListener('click',backToOverview);
 function selectRoad(i,source) {
   if(!visible.includes(i))return;
+  if(i===selected&&!locator.hidden){backToOverview();return;}
+  pickedStreet=null;
   if(selected===null) priorView={center:view.center.slice(),scale:view.scale,mode:view.mode};
   selected=i;lastSelected=i;returnSource=source;
   clearRoadTip();byId('explore-key').hidden=true;
   byId('browse').hidden=true;byId('details').hidden=false;renderStory(i);byId('details').scrollTop=0;
   const loc=roads[i].location;
+  if(loc)showLocator(position[i].point,roads[i].district+'的'+roads[i].name);
+  else hideLocator();
   byId('map-hint').hidden=!loc;
   byId('map-hint-name').textContent=roads[i].name;
   byId('map-hint-text').textContent=loc?locLabel[loc.kind]:'';
@@ -381,6 +443,7 @@ function selectRoad(i,source) {
   if(matchMedia('(max-width:720px)').matches && source==='row') byId('map').scrollIntoView({block:'start'});
 }
 function returnToList(restore=true) {
+  pickedStreet=null;hideLocator();
   clearRoadTip();byId('explore-key').hidden=false;
   selected=null;byId('details').hidden=true;byId('browse').hidden=false;
   byId('map-hint').hidden=true;byId('map-caption').hidden=true;
@@ -411,6 +474,7 @@ function options(select,label,values,labels={}){
 }
 options(area,'全部区域',archive.areas);options(type,'命名类型',archive.types);options(state,'路名由来',archive.states,originLabels);
 function filter(reframe=true) {
+  if(pickedStreet)returnToList(false);
   const term=norm(queryInput.value);visible=[];
   roads.forEach((r,i)=>{
     const match=[r.name,r.pinyin||'',...r.old_names].some(v=>norm(v).includes(term)) &&
@@ -432,8 +496,8 @@ for(const s of [area,type,state])s.addEventListener('change',()=>filter());
 document.querySelector('.filters').addEventListener('submit',e=>e.preventDefault());
 function clearAll(){document.querySelector('.filters').reset();filter();queryInput.focus({preventScroll:true});}
 byId('reset').addEventListener('click',clearAll);byId('showall').addEventListener('click',clearAll);
-byId('city').addEventListener('click',()=>{if(selected!==null)returnToList(false);cityView();});
-byId('fit').addEventListener('click',()=>{if(selected!==null)returnToList(false);fitRoads();});
+byId('city').addEventListener('click',()=>{if(selected!==null||pickedStreet)returnToList(false);cityView();});
+byId('fit').addEventListener('click',()=>{if(selected!==null||pickedStreet)returnToList(false);fitRoads();});
 byId('zoom-in').addEventListener('click',()=>zoomAt(1.55));byId('zoom-out').addEventListener('click',()=>zoomAt(1/1.55));
 byId('about').addEventListener('click',()=>{
   const picture=byId('rules').querySelector('img');
@@ -480,10 +544,13 @@ surface.addEventListener('pointermove',e=>{
   if(prev.span>2 && next.span>2)zoomAt(next.span/prev.span,prev.x,prev.y);
   camera([view.center[0]-(next.x-prev.x)/view.scale,view.center[1]-(next.y-prev.y)/view.scale],view.scale,'free');
 });
-function segmentDistance2(x,y,ax,ay,bx,by){
+function segmentFraction(x,y,ax,ay,bx,by){
   const dx=bx-ax, dy=by-ay;
-  const t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy||1)));
-  return (x-ax-t*dx)**2+(y-ay-t*dy)**2;
+  return Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy||1)));
+}
+function segmentDistance2(x,y,ax,ay,bx,by){
+  const t=segmentFraction(x,y,ax,ay,bx,by);
+  return (x-ax-t*(bx-ax))**2+(y-ay-t*(by-ay))**2;
 }
 function roadAt(p,tolerance=6){
   const [x,y]=world(p), radius=tolerance/view.scale;
@@ -496,14 +563,32 @@ function roadAt(p,tolerance=6){
     }
   }
   if(hit)return hit;
-  for(const feature of visibleStreets){
+  const streets=pickedStreet&&!visibleStreets.includes(pickedStreet.feature)?[pickedStreet.feature,...visibleStreets]:visibleStreets;
+  for(const feature of streets){
     if(!inWindow(feature.box,box))continue;
     for(const flat of feature.parts)for(let j=2;j<flat.length;j+=2){
-      const d=segmentDistance2(x,y,flat[j-2],-flat[j-1]*latitudeFactor,flat[j],-flat[j+1]*latitudeFactor);
-      if(d<best){best=d;hit={feature};}
+      const ax=flat[j-2],ay=-flat[j-1]*latitudeFactor,bx=flat[j],by=-flat[j+1]*latitudeFactor;
+      const t=segmentFraction(x,y,ax,ay,bx,by);
+      const px=ax+t*(bx-ax),py=ay+t*(by-ay),d=(x-px)**2+(y-py)**2;
+      if(d<best){best=d;hit={feature,point:[px,py]};}
     }
   }
   return hit;
+}
+function selectStreet(feature,point){
+  if(pickedStreet?.feature===feature&&!locator.hidden){backToOverview();return;}
+  if(selected!==null)returnToList(false);
+  pickedStreet={feature,point};
+  showLocator(point,feature.name);
+  byId('explore-key').hidden=true;
+  byId('map-hint-name').textContent=feature.name;
+  byId('map-hint-text').textContent='';
+  byId('map-hint').className='map-hint';byId('map-hint').hidden=false;
+  frameStreet();
+}
+function frameStreet(){
+  const box=pickedStreet.feature.box;
+  camera([(box[0]+box[2])/2,(box[1]+box[3])/2],Math.min(scaleForBounds(box),.72),'street');
 }
 const roadTip=byId('road-tip'), trace=byId('hover-path');
 let hoverKey=null, hoverFrame=0, hoverPoint=null;
@@ -541,7 +626,9 @@ function endPointer(e){
   if(!pointers.has(e.pointerId))return;
   if(e.type==='pointerup'&&!moved&&pointers.size===1){
     const p=pointerAt(e),hit=roadAt(p,e.pointerType==='touch'?10:6);
-    if(hit?.index!==undefined)selectRoad(hit.index,'marker');else showRoadTip(hit,p);
+    if(hit?.index!==undefined)selectRoad(hit.index,'marker');
+    else if(hit?.feature)selectStreet(hit.feature,hit.point);
+    else showRoadTip(hit,p);
   }
   pointers.delete(e.pointerId);
   if(!pointers.size){surface.classList.remove('dragging');start=null;}
@@ -553,7 +640,7 @@ surface.addEventListener('keydown',e=>{
   if(e.target!==surface)return;
   const delta={ArrowLeft:[-60,0],ArrowRight:[60,0],ArrowUp:[0,-60],ArrowDown:[0,60]}[e.key];
   if(delta){e.preventDefault();camera([view.center[0]+delta[0]/view.scale,view.center[1]+delta[1]/view.scale],view.scale,'free');}
-  else if(['+','=','-','0'].includes(e.key)){e.preventDefault();if(e.key==='0') fitRoads();else zoomAt(e.key==='-'?1/1.55:1.55);}
+  else if(['+','=','-','0'].includes(e.key)){e.preventDefault();if(e.key==='0'){if(!locator.hidden)backToOverview();else fitRoads();}else zoomAt(e.key==='-'?1/1.55:1.55);}
 });
 function resize(){
   const width=surface.clientWidth,height=surface.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
@@ -561,7 +648,12 @@ function resize(){
   if(view.width===width && view.height===height && canvas.width===pixelsX && canvas.height===pixelsY) return;
   view.width=width;view.height=height;canvas.width=pixelsX;canvas.height=pixelsY;
   minimumScale=Math.min(scaleForBounds(overviewBounds,true),cityScale(),maximumScale);
-  if(view.mode==='city')cityView();else if(view.mode==='all')fitRoads();else if(view.mode==='selected'&&selected!==null)frameSelection(selected);else {limitView();queueDraw();}
+  if(view.mode==='city')cityView();
+  else if(view.mode==='all')fitRoads();
+  else if(view.mode==='overview')collectionView('overview',selected!==null?position[selected]?.point:pickedStreet?.point);
+  else if(view.mode==='selected'&&selected!==null)frameSelection(selected);
+  else if(view.mode==='street'&&pickedStreet)frameStreet();
+  else {limitView();queueDraw();}
 }
 // A shared area link opens with the same bounds as a manual filter selection.
 const initialArea = new URLSearchParams(window.location.search).get('area');

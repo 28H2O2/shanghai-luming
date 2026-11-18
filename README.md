@@ -2,7 +2,7 @@
 
 双击 `dist/index.html` 即可打开路名地图。地图、搜索、筛选和故事都能离线使用。在线访问 [上海鹿鸣](https://shanghai-luming-road-archive.h2o228314.chatgpt.site)。
 
-默认显示市中心。地图优先标出公园、校园和地标。指向或轻点有名的街道会显示路名，点击收藏圆点、彩色道路或目录里的路名可打开故事。用 Tab 聚焦圆点可读路名，按回车打开。“全部道路”把宝山和浦东大团也放进视野，这一档就是当前屏幕能缩到的最远范围。筛选后的同一按钮显示“筛选结果”。支持拖动、滚轮、双指缩放及键盘方向键、加减键。手机上地图在上，故事在下。
+默认显示市中心。地图优先标出公园、校园和地标。指向或轻点有名的街道会显示路名，点击收藏圆点、彩色道路或目录里的路名可打开故事。点开道路后，左上角的缩略图会用红点标出它在上海的位置。点缩略图或再点已选道路，即可回到总览；已选道路会继续高亮，筛选条件也会保留。用 Tab 聚焦圆点可读路名，按回车打开。“全部道路”把宝山和浦东大团也放进视野，这一档就是当前屏幕能缩到的最远范围。筛选后的同一按钮显示“筛选结果”。支持拖动、滚轮、双指缩放及键盘方向键、加减键。手机上地图在上，故事在下。
 
 地图现收录 45 条道路。打开[江湾五角场地图](https://shanghai-luming-road-archive.h2o228314.chatgpt.site/?area=江湾五角场)，可以一起看环岛的五条马路、复旦附近的大学路和国福路、新江湾城的恒耀路，以及此前收录的世界路。全图有 43 条道路画出了具名路段，零点大道标到宝杨路口，大团镇海潮路标到川南奉公路交叉口。定位精度与路名由来的可信度分别记录。
 
@@ -72,6 +72,10 @@ python3 scripts/validate.py --watch
 `assets/shanghai-map.json.gz` 包含裁切、简化的路网、水系、地名和绿地，数据来自 [Geofabrik 上海 OSM 摘录（2026-11-16）](https://download.geofabrik.de/asia/china/shanghai.html)。长江口等水面以 [OpenFreeMap](https://openfreemap.org/) 的 [OpenMapTiles](https://openmaptiles.org/) 2026-11-15 图层补齐。公园、校园和场馆的重点标注见 `data/landmarks.json`，坐标取自同一摘录的对应地物面内，并保留 OSM 对象编号。显示时采用上海附近的等距圆柱投影，北向上。底图取经度 120.96°～121.97°、纬度 30.77°～31.59°，收藏道路周边保留更多支路。大比例尺下可以看走向，不能用于测量道路红线。
 
 地理数据按 [Open Database License 1.0](https://www.openstreetmap.org/copyright) 提供，© OpenStreetMap 贡献者。可在页面“收录说明”中下载完整底图与道路定位数据。底图的压缩整数格式、原点和换算公式在下载文件的 `encoding` 字段中。署名使用从 Macintosh Skeletal Filled 提取的 “made by H2O2” 字形。在线版单独缓存字体，离线版把字体嵌在页面里。
+
+缩略图采用 [Natural Earth 1:10m Admin 1](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-1-states-provinces/) v5.1.1 的上海轮廓（CN-SH，WGS84），简化后存于 `data/shanghai-outline.json`。市域轮廓、底图中的黄浦江和选中道路共用同一投影。收藏道路使用记录中的代表点，普通街道使用点击位置在路段上的最近点。
+
+界面用暖灰和米白作底，取意外滩石材；砖红用于页头和选中道路，取意上海历史街区的砖墙。可参阅[上海市政府发展研究中心的城市色彩调研](https://www.fzzx.sh.gov.cn/zdkt_2018/20200117/0053-10523.html)及[外滩、衡复风貌区建筑色彩研究](https://ch.whu.edu.cn/article/doi/10.13203/j.whugis20250342)。
 
 ## 单独校验与生成
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#193f34">
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#793e37">
 <meta name="description" content="在上海地图上找一条路，读它的旧名、来历与出处。"><title>上海鹿鸣 · 路名地图</title><link rel="icon" href="data:,"><style>@@CSS@@</style></head><body>
 <svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
 <symbol id="sign" viewBox="0 0 24 24"><path d="M12 2v20M3 5h14l4 3-4 3H3zM18 14H7l-4 3 4 3h11z"/></symbol>
@@ -19,8 +19,16 @@
 <main class="workspace">
 <section class="map" id="map" aria-label="上海路名交互地图">
 <div class="surface" id="surface" tabindex="0" aria-label="拖动平移，滚轮或加减键缩放，方向键平移。聚焦收藏点可读路名，按回车读故事。"><canvas id="canvas" aria-hidden="true"></canvas><svg class="road-trace" aria-hidden="true"><path id="hover-path" vector-effect="non-scaling-stroke"/></svg><div class="marks" id="marks"></div><div id="road-tip" class="road-tip" hidden></div></div>
-<div class="mapbar" aria-label="地图范围"><button type="button" id="city" aria-pressed="true">市中心</button><button type="button" id="fit" aria-pressed="false">全部道路</button></div>
-<div class="north" aria-label="上方为北"><span>N</span><svg viewBox="0 0 20 32" aria-hidden="true"><path d="m10 1 7 26-7-5-7 5z" fill="#fffbee" stroke="#486457"/><path d="M10 1v21l-7 5z" fill="#486457"/></svg></div>
+<div class="mapbar" id="mapbar" aria-label="地图范围"><button type="button" id="city" aria-pressed="true">市中心</button><button type="button" id="fit" aria-pressed="false">全部道路</button></div>
+<button id="locator" class="locator" type="button" hidden>
+  <svg id="locator-map" viewBox="0 0 136 90" aria-hidden="true">
+    <path class="locator-land" id="locator-land" fill-rule="evenodd"/>
+    <path class="locator-river" id="locator-river"/>
+    <g id="locator-pin"><circle class="locator-halo" r="7"/><circle class="locator-dot" r="3.6"/></g>
+  </svg>
+  <span class="locator-caption">返回大图<span aria-hidden="true">↗</span></span>
+</button>
+<div class="north" aria-label="上方为北"><span>N</span><svg viewBox="0 0 20 32" aria-hidden="true"><path d="m10 1 7 26-7-5-7 5z" fill="var(--card)" stroke="currentColor"/><path d="M10 1v21l-7 5z" fill="currentColor"/></svg></div>
 <p class="map-caption" id="map-caption" role="status" hidden></p>
 <button id="retry-map" class="map-retry" type="button" hidden>部分底图未载入 · 重试</button>
 <div class="maptools"><button id="zoom-in" type="button" aria-label="放大地图">+</button><button id="zoom-out" type="button" aria-label="缩小地图">−</button></div>
@@ -40,9 +48,9 @@
 <footer class="foot"><span>上海路名收藏册</span><a class="credit" href="https://github.com/28H2O2" target="_blank" rel="noopener noreferrer" lang="en">made by H2O2</a></footer></aside>
 </main>
 <dialog id="rules" aria-labelledby="rules-title"><img class="dialog-pic" data-src="@@ART@@" decoding="async" alt="创作插画，上海街角的电车"><div class="dialog-content"><div class="dialog-top"><h2 id="rules-title">收录说明</h2><button id="close" aria-label="关闭" type="button">×</button></div>
-<p>地图优先标出公园、校园和地标。指向或轻点有名称的街道可以看路名。带圆点的是收藏道路，点开可读故事、旧名和出处。同名道路按所在区区分。</p>
+<p>地图优先标出公园、校园和地标。指向街道可看路名，点开后，左上角的小图会标出它在上海的位置。点小图可返回总览。带圆点的是收藏道路，还可读故事、旧名和出处。同名道路按所在区区分。</p>
 <p><b>由来有据</b>表示条目引用的资料记载了路名的来历。<b>由来未详</b>表示现有出处能找到这条路，却没有说明名字是怎么来的。<b>民间传说</b>单列流传的说法，并注明哪里记载了它。</p>
-<p>底图来自 <a href="https://download.geofabrik.de/asia/china/shanghai.html" target="_blank" rel="noopener noreferrer">Geofabrik 上海摘录</a>，长江口等水面另取自 OpenFreeMap 的 OpenMapTiles 水面图层。@@OFFLINE_NOTE@@道路资料注明坐标依据和定位精度。底图与 OSM 道路几何按 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a> 提供。<button id="download-map" class="reset" type="button">下载本页地理数据</button></p>
+<p>底图来自 <a href="https://download.geofabrik.de/asia/china/shanghai.html" target="_blank" rel="noopener noreferrer">Geofabrik 上海摘录</a>，长江口等水面另取自 OpenFreeMap 的 OpenMapTiles 水面图层。左上角缩略图的上海轮廓取自 <a href="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-1-states-provinces/" target="_blank" rel="noopener noreferrer">Natural Earth</a>。@@OFFLINE_NOTE@@道路资料注明坐标依据和定位精度。底图与 OSM 道路几何按 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 1.0</a> 提供。<button id="download-map" class="reset" type="button">下载本页地理数据</button></p>
 </div></dialog>
 <script type="application/json" id="dataset">@@ARCHIVE@@</script>
 <script type="application/json" id="basemap">@@BASEMAP@@</script>
