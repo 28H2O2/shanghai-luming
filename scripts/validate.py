@@ -247,7 +247,7 @@ def build(roads):
     hosted_map["download"] = site_asset("geography", "json", compact(dict(geography=geography, locations=locations)).encode())
     online = render(compact(hosted_map), site_asset("tram", "jpg", illustration),
                     site_asset("signature", "woff2", signature), site_asset("favicon", "svg", icon_svg),
-                    "favicon.ico", "在线地图按当前视野载入街道。")
+                    site_asset("favicon", "ico", icon_ico), "在线地图按当前视野载入街道。")
     write_output(SITE / "favicon.ico", icon_ico)
     write_output(SITE / "index.html", online)
     write_output(OUTPUT, offline)
