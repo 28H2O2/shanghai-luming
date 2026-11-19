@@ -3,5 +3,13 @@
   "framework": null,
   "installCommand": "",
   "buildCommand": "python3 scripts/validate.py --build",
-  "outputDirectory": "out"
+  "outputDirectory": "out",
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
 }

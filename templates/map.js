@@ -142,7 +142,7 @@ if(geography.tiles) {
   geography.features.forEach((row,index)=>indexFeature(index,...row));
 }
 const dirtyLayers=new Set();
-let loadingTiles=0;
+let loadingTiles=0, tileWindows=null;
 async function loadTile(tile) {
   tile.state='loading';
   loadingTiles++;
@@ -155,23 +155,26 @@ async function loadTile(tile) {
       dirtyLayers.add(row[1]);
     }
     tile.state='loaded';
+    if(inWindow(tile.box,base.window)) base.stale=true;
   } catch {
     tile.state='failed';
   } finally {
     loadingTiles--;
+    requestTiles();
     queueDraw();
   }
 }
-function updateTiles(window) {
-  const needed=tiles.filter(tile=>inWindow(tile.box,window));
+function requestTiles(windows=tileWindows) {
+  tileWindows=windows;
+  const [near,wide]=windows;
+  const needed=tiles.filter(tile=>inWindow(tile.box,near));
   byId('retry-map').hidden=!needed.some(tile=>tile.state==='failed');
-  for(const tile of needed){
-    if(loadingTiles>=4) break;
+  // Fill the screen first, then the surrounding margin that a short drag reveals.
+  const waiting=needed.some(tile=>tile.state==='idle'||tile.state==='loading');
+  for(const tile of waiting?needed:tiles.filter(tile=>inWindow(tile.box,wide))){
+    if(loadingTiles>=8) break;
     if(tile.state==='idle') loadTile(tile);
   }
-  // Preserve the source's drawing and label priority regardless of network completion order.
-  for(const kind of dirtyLayers) grouped.get(kind).sort((a,b)=>a.index-b.index);
-  dirtyLayers.clear();
 }
 byId('retry-map').addEventListener('click',()=>{
   for(const tile of tiles) if(tile.state==='failed') tile.state='idle';
@@ -192,19 +195,28 @@ const roadLayers=['lane','street','secondary','main','highway'];
 const cutoffs={field:0,block:.041,green:0,building:.28,water:0,river:0,canal:.052,rail:.03,lane:.067,street:.046,secondary:.019,main:0,highway:0};
 const widths={river:1.7,canal:1,rail:1.1,lane:1.5,street:2.2,secondary:2.9,main:3.8,highway:3.6};
 const lineOrder=['river','canal','rail',...roadLayers];
-let visibleStreets=[];
+let visibleStreets=[], shown={};
 function inWindow(box,window) {return box[0]<=window[2] && box[2]>=window[0] && box[1]<=window[3] && box[3]>=window[1];}
-function draw() {
-  frame=0;
-  const {width,height,scale}=view,dpr=canvas.width/Math.max(1,width);
-  const [left,top]=world([0,0]), [right,bottom]=world([width,height]);
-  const window=[left,top,right,bottom];
-  if(tiles.length) updateTiles(window);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle='#ece7e0';ctx.fillRect(0,0,width,height);
-  ctx.setTransform(dpr*scale,0,0,dpr*scale,-left*scale*dpr,-top*scale*dpr);
-  ctx.lineJoin='round';ctx.lineCap='round';
-  const shown={};
+// The basemap is painted into an offscreen bitmap. A drag copies it and strokes the geometry again
+// only when the view leaves the bitmap; zooming and newly loaded tiles repaint at once.
+const base={canvas:document.createElement('canvas'),window:[0,0,0,0],scale:0,dpr:0,stale:true};
+const baseCtx=base.canvas.getContext('2d');
+function paintBase(left,top,scale,dpr,margin) {
+  // Preserve the source's drawing and label priority regardless of network completion order.
+  for(const kind of dirtyLayers) grouped.get(kind).sort((a,b)=>a.index-b.index);
+  dirtyLayers.clear();
+  // Whole-pixel margins keep the copy on the screen's pixel grid.
+  const marginX=Math.round(canvas.width*margin), marginY=Math.round(canvas.height*margin);
+  const pixelsX=canvas.width+2*marginX, pixelsY=canvas.height+2*marginY, unit=scale*dpr;
+  if(base.canvas.width!==pixelsX || base.canvas.height!==pixelsY){base.canvas.width=pixelsX;base.canvas.height=pixelsY;}
+  const window=[left-marginX/unit,top-marginY/unit,left+(canvas.width+marginX)/unit,top+(canvas.height+marginY)/unit];
+  Object.assign(base,{window,scale,dpr,stale:false});
+  const g=baseCtx;
+  g.setTransform(1,0,0,1,0,0);
+  g.fillStyle='#ece7e0';g.fillRect(0,0,pixelsX,pixelsY);
+  g.setTransform(unit,0,0,unit,marginX-left*unit,marginY-top*unit);
+  g.lineJoin='round';g.lineCap='round';
+  shown={};
   for(const kind of [...polygonLayers,...lineOrder]){
     const layer=scale>=cutoffs[kind]?(grouped.get(kind)||[]):[];
     shown[kind]=layer.filter(f=>inWindow(f.box,window));
@@ -212,21 +224,44 @@ function draw() {
   }
   visibleStreets=roadLayers.flatMap(kind=>shown[kind]).filter(f=>f.name);
   for(const kind of polygonLayers) {
-    ctx.fillStyle=mapPalette[kind];
-    for(const f of shown[kind]) ctx.fill(f.path,'evenodd');
+    g.fillStyle=mapPalette[kind];
+    for(const f of shown[kind]) g.fill(f.path,'evenodd');
   }
   const widthRatio=Math.max(.65,Math.min(1.9,(scale/.105)**.32));
   for(const kind of lineOrder) {
     const path=new Path2D();
     for(const f of shown[kind]) path.addPath(f.path);
     if(roadLayers.includes(kind) && scale>.03) {
-      ctx.strokeStyle=kind==='highway'?'#bfa98e':'#cdc3b9';
-      ctx.lineWidth=(widths[kind]*widthRatio+1.05)/scale;ctx.stroke(path);
+      g.strokeStyle=kind==='highway'?'#bfa98e':'#cdc3b9';
+      g.lineWidth=(widths[kind]*widthRatio+1.05)/scale;g.stroke(path);
     }
-    ctx.strokeStyle=mapPalette[kind];ctx.lineWidth=widths[kind]*widthRatio/scale;
-    ctx.setLineDash(kind==='rail'?[3/scale,3/scale]:[]);ctx.stroke(path);
-    ctx.setLineDash([]);
+    g.strokeStyle=mapPalette[kind];g.lineWidth=widths[kind]*widthRatio/scale;
+    g.setLineDash(kind==='rail'?[3/scale,3/scale]:[]);g.stroke(path);
+    g.setLineDash([]);
   }
+}
+function draw() {
+  frame=0;
+  if(!canvas.width || !canvas.height) return;
+  const {width,height,scale}=view,dpr=canvas.width/width,unit=scale*dpr;
+  const [left,top]=world([0,0]), [right,bottom]=world([width,height]);
+  if(tiles.length){
+    const padX=(right-left)/4, padY=(bottom-top)/4;
+    requestTiles([[left,top,right,bottom],[left-padX,top-padY,right+padX,bottom+padY]]);
+  }
+  let x=Math.round((base.window[0]-left)*unit), y=Math.round((base.window[1]-top)*unit);
+  const current=!base.stale && base.scale===scale && base.dpr===dpr;
+  if(!current || x>0 || y>0 || x+base.canvas.width<canvas.width || y+base.canvas.height<canvas.height){
+    // Only a drag is likely to continue the same way, so only then paint a quarter screen beyond each
+    // edge, less on large screens to keep the bitmap under 12 megapixels.
+    const margin=current?Math.max(0,Math.min(.25,(Math.sqrt(12e6/(canvas.width*canvas.height))-1)/2)):0;
+    paintBase(left,top,scale,dpr,margin);
+    x=Math.round((base.window[0]-left)*unit);y=Math.round((base.window[1]-top)*unit);
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(base.canvas,x,y);
+  ctx.setTransform(unit,0,0,unit,-left*unit,-top*unit);
+  ctx.lineJoin='round';ctx.lineCap='round';
   // Draw the selected road last so that overlapping roads never cover it.
   const order=visible.filter(i=>i!==selected);
   if(selected!==null) order.push(selected);

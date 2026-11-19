@@ -88,4 +88,4 @@ python3 scripts/validate.py --build
 
 本地更新后，将新版本发布至同一 Sites 项目，在线页才会随之更新。发布前运行 `--build`，站点入口为 `out/index.html`。Sites 配置见 `.openai/hosting.json`。收录说明中的电车街景为创作插画。
 
-Vercel 从 GitHub 仓库 `28H2O2/shanghai-luming` 的 `main` 分支部署。推送后，Vercel 按 `vercel.json` 的配置运行上述校验和构建，将 `out/` 发布到 [上海鹿鸣](https://shanghai-luming.vercel.app/)。校验或构建失败时，线上继续使用上一次成功的版本。
+Vercel 从 GitHub 仓库 `28H2O2/shanghai-luming` 的 `main` 分支部署。推送后，Vercel 按 `vercel.json` 的配置运行上述校验和构建，将 `out/` 发布到 [上海鹿鸣](https://shanghai-luming.vercel.app/)。校验或构建失败时，线上继续使用上一次成功的版本。`out/assets/` 里的文件名都带内容哈希，`vercel.json` 让浏览器把它们缓存一年，回访时只需重新取首页。
